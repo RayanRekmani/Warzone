@@ -19,6 +19,8 @@ void testLoadMap(){
     string map_solar = "maps/solar.map";
     string map_google = "maps/google.map";
     string map_europass = "maps/europass.map";
+    string map_badMap = "maps/badMap.map";
+    string map_fail = "maps/fail.map";
 
     cout << "Loading Brasil Map" << endl;
     Map* m1 = maploader.loadMap(map_brasil);
@@ -47,6 +49,18 @@ void testLoadMap(){
     cout << "Loading Europass Map" << endl;
     Map* m5 = maploader.loadMap(map_europass);
     m5->validateMap();
+    cout << "----------------------------------------------" <<endl;
+    cout << endl;
+
+    cout << "Loading Faulty Map #1 (disconnected territories)" << endl;
+    Map* m6 = maploader.loadMap(map_badMap);
+    m6->validateMap();
+    cout << "----------------------------------------------" <<endl;
+    cout << endl;
+
+    cout << "Loading Faulty Map #2 (nothing connected)" << endl;
+    Map* m7 = maploader.loadMap(map_fail);
+    m7->validateMap();
     cout << "----------------------------------------------" <<endl;
     cout << endl;
 
