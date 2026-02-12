@@ -7,6 +7,7 @@
 using namespace std;
 
 class Hand;
+class Deck;
 class Card;
 class Player;
 
@@ -21,12 +22,12 @@ class Hand {
         Hand(Player* p); // Parameter constructor with a Player pointer.
         Hand(const Hand&); // Copy constructor
         void addCard(Card* card); // Adds a card object to hand.
-        void removeCard(int i); // Removes card from the hand at index i.
-        Card* getCard(int i); // Returns a pointer to the Card at index i.
+        void removeCard(int); // Removes card from the hand at index i.
+        Card* getCard(int); // Returns a pointer to the Card at index i.
         vector<Card*> getAllCards(); // Returns the vector of all cards in the hand.
         int getSize(); // Returns the number of cards in the hand.
         void setPlayer(Player* p); // Sets player attribute to Player pointer p.
-        Order* playCard(int i); // Calls the play() method of a card stored in the hand at index i. Returns corresponding order to card type.
+        Order* playCard(int, Deck*); // Calls the play() method of a card stored in the hand at index i. Returns corresponding order to card type and puts the card back in the deck.
         ostream& print(ostream&); // Prints each card in the hand.
         ~Hand(); // Deconstructor
     private:

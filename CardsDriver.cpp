@@ -1,8 +1,9 @@
 // Written by Adam Blevins, 40255384
+#pragma once
 #include "Cards.h"
-#include "Cards.cpp"
 #include <iostream>
 #include "Orders.h"
+#include "Cards.cpp"
 
 
 using namespace std;
@@ -69,7 +70,7 @@ int main() {
 
     // Plays each card in the hand.
     while(hand1->getSize() > 0){
-        hand1->playCard(0);
+        hand1->playCard(0, deck);
     }
 
     cout << "After playing all cards in the hand:" << endl;

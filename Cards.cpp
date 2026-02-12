@@ -1,6 +1,6 @@
 // Written by Adam Blevins, 40255384
 
-// TODO: Finalize order creation during the play() method. Add << for Hand.
+// TODO: Finalize order creation during the play() method.
 #pragma once
 #include "Cards.h"
 #include "Orders.h"
@@ -60,8 +60,9 @@ int Hand::getSize(){
 }
 
 // Method to play a card at an index i and removes it from the hand. 
-Order* Hand::playCard(int i){
+Order* Hand::playCard(int i, Deck* deck){
    Order* order = this->hand[i]->play(); // Each card has a play() method that overrides the main card classes play() method, which each creates an order corresponding to the card's type.
+   deck->addCard(this->hand[i]);
    this->removeCard(i);
    return order;
 }
