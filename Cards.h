@@ -72,7 +72,7 @@ class Card {
         Card(const Card&); // Copy constructor
         virtual Card* copy(); // Returns a copy of a card. Since each card has no attributes it returns a new card of the same type. Used in the copy constructor for the Deck class.
         virtual Order* play(); // Creates and returns an order corresponding the card and removes the card from the hand. All of Card's children have a play() method. 
-        virtual ostream& print(ostream&); // Prints what type of card it is. All of Card's children have a print() method that overloads it.
+        virtual ostream& print(ostream&); // Prints what type of card it is. All of Card's children have a print() method that overrides it.
         Card& operator=(const Card&); // Assignment operator overload
         ~Card(); // Deconstructor
 
@@ -163,3 +163,4 @@ class DiplomacyCard: public Card {
         ~DiplomacyCard(); // Deconstructor
 
     };
+
