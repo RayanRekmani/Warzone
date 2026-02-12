@@ -143,7 +143,7 @@ void Deck::drawToHand(Hand* hand) {
 ostream& Deck::print(ostream& out){
     out << "This deck contains: " << endl;
     for(int i = 0; i < deck.size(); i++){
-        deck[i]->print(out); // Each card has a print() method that overloads the base Card classes print, meaning the correct type of card is printed through polymorphism.
+        deck[i]->print(out); // Each card has a print() method that overrides the base Card classes print, meaning the correct type of card is printed through polymorphism.
     }
     return out;
 }
@@ -192,7 +192,7 @@ Card::Card(const Card& card){
 
 }
 
-// Copy method used in the Deck class's copy constructor. Each derived card has a copy() method that overloads this one.
+// Copy method used in the Deck class's copy constructor. Each derived card has a copy() method that overrides this one.
 Card* Card::copy(){
     return new Card();
 }
@@ -203,7 +203,7 @@ Order* Card::play(){
     return nullptr; // This specific method shouldn't be called, if it is then an error has happened.
 }
 
-// Print method for the type of card. Each derived card has their own overloading print() method that prints which type of card it is.
+// Print method for the type of card. Each derived card has their own overriding print() method that prints which type of card it is.
 ostream& Card::print(ostream& out){
     return out << "This is a card.";
 }
@@ -213,7 +213,7 @@ ostream& operator<<(ostream& strm, Card& a){
     return a.print(strm);
 }
 
-// Assignment operator override
+// Assignment operator overload
 Card& Card::operator=(const Card& c){
     return *this;
 }
@@ -457,3 +457,4 @@ BlockadeCard& BlockadeCard::operator=(const BlockadeCard& c){
 BlockadeCard::~BlockadeCard(){
     
 }
+
