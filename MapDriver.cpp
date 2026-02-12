@@ -14,11 +14,11 @@ void testLoadMap(){
 
     MapLoader maploader;
 
-    string map_brasil = "brasil.map";
-    string map_euro = "europe.map";
-    string map_solar = "solar.map";
-    string map_google = "google.map";
-    string map_europass = "europass.map";
+    string map_brasil = "maps/brasil.map";
+    string map_euro = "maps/europe.map";
+    string map_solar = "maps/solar.map";
+    string map_google = "maps/google.map";
+    string map_europass = "maps/europass.map";
 
     cout << "Loading Brasil Map" << endl;
     Map* m1 = maploader.loadMap(map_brasil);
