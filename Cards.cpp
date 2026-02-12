@@ -54,17 +54,16 @@ vector<Card*> Hand::getAllCards(){
     return this->hand;
 }
 
-// Returns the size of the hand
 int Hand::getSize(){
     return this->hand.size();
 }
 
 // Method to play a card at an index i and removes it from the hand. 
-Order* Hand::playCard(int i, Deck* deck){
-   Order* order = this->hand[i]->play(); // Each card has a play() method that overrides the main card classes play() method, which each creates an order corresponding to the card's type.
+void Hand::playCard(int i, Deck* deck, OrdersList* ordersList){
+    // Each card has a play() method that overrides the main card classes play() method, which each creates an order corresponding to the card's type and adds it to an OrdersList.
+   ordersList->addOrder(this->hand[i]->play()); 
    deck->addCard(this->hand[i]);
    this->removeCard(i);
-   return order;
 }
 
 // Setter for the Player pointer in the hand.
@@ -458,5 +457,3 @@ BlockadeCard& BlockadeCard::operator=(const BlockadeCard& c){
 BlockadeCard::~BlockadeCard(){
     
 }
-
-

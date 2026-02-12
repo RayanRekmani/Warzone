@@ -27,7 +27,7 @@ class Hand {
         vector<Card*> getAllCards(); // Returns the vector of all cards in the hand.
         int getSize(); // Returns the number of cards in the hand.
         void setPlayer(Player* p); // Sets player attribute to Player pointer p.
-        Order* playCard(int, Deck*); // Calls the play() method of a card stored in the hand at index i. Returns corresponding order to card type and puts the card back in the deck.
+        void playCard(int, Deck*, OrdersList*); // Calls the play() method of a card stored in the hand at index i. Returns corresponding order to card type and puts the card back in the deck.
         ostream& print(ostream&); // Prints each card in the hand.
         ~Hand(); // Deconstructor
     private:

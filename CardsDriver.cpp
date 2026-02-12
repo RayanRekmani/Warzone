@@ -3,6 +3,8 @@
 #include "Cards.h"
 #include <iostream>
 #include "Orders.h"
+#include "Orders.cpp"
+#include "Cards.cpp"
 
 using namespace std;
 
@@ -46,6 +48,10 @@ int main() {
     // Creates pointer to a hand that will be later assigned to a player.
     Hand* hand1 = new Hand();
 
+    // Creates dummy OrdersList for this driver.
+    OrdersList* ordersList = new OrdersList();
+
+
     cout << "Starting setup:" << endl;
 
     hand1->print(cout);
@@ -68,7 +74,7 @@ int main() {
 
     // Plays each card in the hand.
     while(hand1->getSize() > 0){
-        hand1->playCard(0, deck);
+        hand1->playCard(0, deck, ordersList);
     }
 
     cout << "After playing all cards in the hand:" << endl;
@@ -79,6 +85,5 @@ int main() {
     deck->print(cout);
     cout << endl;
 };
-
 
 
