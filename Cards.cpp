@@ -4,7 +4,6 @@
 #pragma once
 #include "Cards.h"
 #include "Orders.h"
-#include "Orders.cpp"
 #include <iostream>
 #include <algorithm>
 #include <random>
@@ -458,3 +457,4 @@ BlockadeCard& BlockadeCard::operator=(const BlockadeCard& c){
 BlockadeCard::~BlockadeCard(){
     
 }
+
