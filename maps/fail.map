@@ -1,0 +1,26 @@
+; Invalid map - North continent has disconnected territories
+; Territory A and B form one island, C forms another island
+; They're both in North continent but not connected to each other
+
+[files]
+pic invalid_pic.png
+map invalid_map.gif
+crd invalid.cards
+
+[continents]
+North 3 red
+South 2 blue
+
+[countries]
+1 Territory_A 1 100 100
+2 Territory_B 1 150 100
+3 Territory_C 1 300 100
+4 Territory_D 2 100 200
+5 Territory_E 2 150 200
+
+[borders]
+1 2 4
+2 1 5
+3 
+4 1 5
+5 2 4

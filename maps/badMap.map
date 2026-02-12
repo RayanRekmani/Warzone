@@ -1,0 +1,25 @@
+; Invalid map - Two separate islands that don't connect
+; North territories connect to each other
+; South territories connect to each other
+; But North never connects to South
+
+[files]
+pic island_pic.png
+map island_map.gif
+crd island.cards
+
+[continents]
+North 3 red
+South 2 blue
+
+[countries]
+1 Territory_A 1 100 100
+2 Territory_B 1 150 100
+3 Territory_C 2 400 100
+4 Territory_D 2 450 100
+
+[borders]
+1 2
+2 1
+3 4
+4 3
