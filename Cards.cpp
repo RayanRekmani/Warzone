@@ -54,6 +54,7 @@ vector<Card*> Hand::getAllCards(){
     return this->hand;
 }
 
+// Returns the size of the hand
 int Hand::getSize(){
     return this->hand.size();
 }
@@ -457,4 +458,5 @@ BlockadeCard& BlockadeCard::operator=(const BlockadeCard& c){
 BlockadeCard::~BlockadeCard(){
     
 }
+
 
