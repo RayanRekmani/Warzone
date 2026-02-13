@@ -3,8 +3,6 @@
 #include "Cards.h"
 #include <iostream>
 #include "Orders.h"
-#include "Orders.cpp"
-#include "Cards.cpp"
 
 using namespace std;
 
@@ -85,5 +83,6 @@ int main() {
     deck->print(cout);
     cout << endl;
 };
+
 
 
