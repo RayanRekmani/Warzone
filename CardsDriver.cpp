@@ -82,7 +82,12 @@ int main() {
     
     deck->print(cout);
     cout << endl;
-};
 
+    delete deck;
+    delete hand1;
+    delete ordersList;
+
+    return 0;
+};
 
 
