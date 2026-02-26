@@ -41,6 +41,8 @@ public:
     void start(); //main game loopp
     void processCommand(string command); //validates transition and executes if valid
 
+    State* getCurrentState() const;
+
     friend ostream& operator<<(ostream& os, const GameEngine& engine);
 
 private:
