@@ -125,6 +125,10 @@ void GameEngine::processCommand(string command) {
     }
 } //validates user command by checking if it is a valid transition from current state, if valid updates current state to next state
 
+State* GameEngine::getCurrentState() const {
+    return currentState;
+}
+
 void GameEngine::start() {
     string command;
     while (currentState->getName() != "end") {
