@@ -1,11 +1,12 @@
 // developed by Lyna Taleb, 40210567
+// appended by Rayan Rekmani 40283058
 #include "GameEngine.h"
-
+#include "CommandProcessing.h"
 /*
 control flow of the game w a state machine using a pointer to a state obj
 when user enters valid command, pointer is updated to reference next state
 (no implementation of game, just state transitions)
-*/ 
+*/
 
 // STATE CLASS --------------------------------------------------------------------
 
@@ -36,7 +37,7 @@ State::~State() {
 
 string State::getName() const {
     return *name;
-} //returns name of current state 
+} //returns name of current state
 
 void State::addTransition(string command, State* nextState) {
     (*transitions)[command] = nextState;
@@ -83,7 +84,7 @@ GameEngine::~GameEngine() {
     delete states;
 } //destructor deallocates memory for all state objects and the states vector itself
 
-void GameEngine::initializeStates() { 
+void GameEngine::initializeStates() {
     State* start = new State("start");
     State* map_loaded = new State("map_loaded");
     State* map_validated = new State("map_validated");

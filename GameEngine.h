@@ -1,4 +1,6 @@
 // developed by Lyna Taleb, 40210567
+// appended by Rayan Rekmani 40283058
+
 #pragma once
 #include <string>
 #include <vector>
@@ -8,6 +10,8 @@
 using namespace std; // for readability
 
 // class declarations (Stste + GameEngine)
+
+class CommandProcessor;
 
 // STATE CLASS --------------------------------------------------------------------
 class State {
@@ -48,6 +52,6 @@ public:
 private:
     State* currentState; //stores addy of a state obj, points to where currentState is in states vector
     vector<State*>* states;
-
+    CommandProcessor* commandProcessor;
     void initializeStates(); //creates all states and transitions between them
 };

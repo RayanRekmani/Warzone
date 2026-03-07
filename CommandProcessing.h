@@ -29,7 +29,7 @@ public:
     string getCommand() const;
     string getEffect() const;
     void saveEffect(string eff);
-    string stringToLog() override; // many classes log (ex. CommandProcessor) so we need to override
+    string stringToLog() const override; // many classes log (ex. CommandProcessor) so we need to override
 
     friend ostream& operator<<(ostream& out, const Command& c);
 };
@@ -51,7 +51,7 @@ public:
     Command* getCommand();
     bool validate(Command* c);
     void setGameEngine(GameEngine* ge);
-    string stringToLog() override;
+    string stringToLog() const override;
     friend ostream& operator<<(ostream& out, const CommandProcessor& cp);
 };
 
