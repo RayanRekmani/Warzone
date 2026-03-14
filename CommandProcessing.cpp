@@ -124,7 +124,7 @@ bool CommandProcessor::validate(Command* c) {
             (state == "map_validated" || state == "players_added"))
         valid = true;
 
-    else if (cmd == "assigncountries" && state == "players_added")
+    else if (cmd == "gamestart" && state == "players_added")
         valid = true;
 
     else if (cmd == "play" && state == "win")
