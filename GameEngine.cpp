@@ -1,8 +1,16 @@
 // developed by Lyna Taleb, 40210567
 // appended by Rayan Rekmani 40283058
 // appended by Adam Blevins 40255384
+#pragma once
 #include "GameEngine.h"
 #include "CommandProcessing.h"
+#include <random>
+#include "Player.h"
+#include <iostream>
+#include "Cards.h"
+#include "LoggingObserver.h"
+#include "Map.h"
+#include <algorithm>
 /*
 control flow of the game w a state machine using a pointer to a state obj
 when user enters valid command, pointer is updated to reference next state
