@@ -35,6 +35,10 @@ public:
     Hand* getHand() const;
     OrdersList* getOrdersList() const;
     std::vector<Territory*>* getTerritories() const;
+    int getReinforcementPool() const;
+
+    // setters
+    void setReinforcementPool(int);
 
     // stream insertion operator
     friend std::ostream& operator<<(std::ostream& os, const Player& p);
@@ -45,6 +49,7 @@ private:
     std::vector<Territory*>* territories;  
     Hand* hand;                             
     OrdersList* orders;                     
+    int reinforcementPool;        
 
 private:
     // Rule of 3 helpers
