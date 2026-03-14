@@ -7,6 +7,8 @@
 #include <vector>
 #include <iostream>
 #include <map>
+#include "Cards.h"
+#include "Map.h"
 
 using namespace std; // for readability
 
