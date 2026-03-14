@@ -1,5 +1,6 @@
 // developed by Lyna Taleb, 40210567
 // appended by Rayan Rekmani 40283058
+// appended by Adam Blevins 40255384
 
 #pragma once
 #include <string>
@@ -42,6 +43,7 @@ public:
     GameEngine& operator=(const GameEngine& other);
     ~GameEngine();
 
+    void startupPhase(); // brings game to main game loop
     void start(); //main game loopp
     void processCommand(string command); //validates transition and executes if valid
 
@@ -53,5 +55,9 @@ private:
     State* currentState; //stores addy of a state obj, points to where currentState is in states vector
     vector<State*>* states;
     CommandProcessor* commandProcessor;
+    Deck* deck;
+    MapLoader* maploader;
+    Map* map;
+    vector<Player*> players;
     void initializeStates(); //creates all states and transitions between them
 };
