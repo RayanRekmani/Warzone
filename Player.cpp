@@ -15,6 +15,7 @@ Player::Player()
     , territories(new std::vector<Territory*>())
     , hand(new Hand(this))          // link hand to this player 
     , orders(new OrdersList()) {
+    reinforcementPool = 0;
 }
 
 Player::Player(const std::string& n)
@@ -22,6 +23,7 @@ Player::Player(const std::string& n)
     , territories(new std::vector<Territory*>())
     , hand(new Hand(this))          // link hand to this player
     , orders(new OrdersList()) {
+    reinforcementPool = 0;
 }
 
 Player::Player(const Player& other)
@@ -103,6 +105,14 @@ std::vector<Territory*>* Player::getTerritories() const {
     return territories;
 }
 
+int Player::getReinforcementPool() const {
+    return reinforcementPool;
+}
+
+void Player::setReinforcementPool(int r){
+    reinforcementPool = r;
+}
+
 // stream output
 std::ostream& operator<<(std::ostream& os, const Player& p) {
     os << "Player{name=" << p.getName()
@@ -137,4 +147,6 @@ void Player::copyFrom(const Player& other) {
     hand->setPlayer(this);              // relink copied hand to this new Player
 
     orders = new OrdersList(*other.orders); // uses OrdersList copy constructor
+
+    reinforcementPool = other.reinforcementPool;
 }
