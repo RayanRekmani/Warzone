@@ -401,3 +401,138 @@ void GameEngine::mainGameLoop() {
         cout << "\nGame ended after " << maxTurns << " turns without a winner." << endl;
     }
 } //controls the game until one player owns all territories or all other players are eliminated
+
+void GameEngine::startupPhase(){
+    cout << "Enter commands (type quit to stop)\n";
+    Command* c;
+    commandProcessor = new CommandProcessor(this);
+    deck = new Deck();
+    maploader = new MapLoader();
+
+    //while in startup phase, keep accepting commands, then process them.
+    while(getCurrentState()->getName() != "assign_reinforcement"){
+            cout << "Current State: " << getCurrentState()->getName() << endl;
+            cout << "> ";
+            c = commandProcessor->getCommand();
+
+            if(c->getCommand() == "quit"){ // If the user entered quit, break before doing anything else
+                break;
+            }
+
+            vector<string> arguments; // Stores the arguments of a command. There should only ever be two arguments max in a command maximum.
+
+            if(c->getCommand().find(" ") < c->getCommand().length()){ // If there's a space in the command, split it up the command.
+                arguments.push_back(c->getCommand().substr(0, c->getCommand().find(" "))); // Puts the first argument in the arguments vector.
+                arguments.push_back(c->getCommand().substr(c->getCommand().find(" ") + 1, c->getCommand().length())); // Puts everything else in the second argument.
+            }
+            else{
+                arguments.push_back(c->getCommand());
+                arguments.push_back(""); // Some times arguments[1] will be called, this line prevents the program from crashing if there is only one argument in the command.
+            }
+
+            if(commandProcessor->validate(c)){
+                // The start of a big else if chain to do an action based off the command.
+                if(arguments[0] == "loadmap"){
+                    string mapName = arguments[1];
+
+                    if(mapName.substr(0, 5) != "maps/") { // If user forgot to enter maps/ in the file name, add it for them.
+                        mapName = "maps/" + mapName;
+                    }
+                    if(mapName.substr(mapName.length() - 4, mapName.length()) != ".map") { // If user forgot to enter the .map suffix in the file name, add it for them.
+                        mapName += ".map";
+                    }
+
+                    map = maploader->loadMap(mapName);
+                    if(map){ // If the map loaded successfully, transition to validatemap state.
+                        processCommand(arguments[0]);
+                    }
+
+                }
+
+                else if(arguments[0] == "validatemap"){
+                    bool isValid = map->validateMap();
+                    if(isValid){ // If the map is valid, transition to addplayer state.
+                        processCommand(arguments[0]);
+                    }
+                }
+
+                else if(arguments[0] == "addplayer"){
+                    if(players.size() < 6){
+                        if(arguments[1] == ""){
+                            arguments[1] = "anonymous";
+                        }
+                        players.push_back(new Player(arguments[1]));
+                        processCommand(arguments[0]);
+                    }
+                    else{
+                        cout << "ERROR: The maximum number of players (6) has already been reached." << endl;
+                    }
+                }
+
+                else if(arguments[0] == "gamestart"){
+                    if(players.size() >= 2){
+                        // Randomize turn order
+                        auto rng = default_random_engine {};
+                        shuffle(players.begin(), players.end(), rng); // Randomize order of player vector, randomizing the paly order.
+                        
+                        // Give away all territories fairly
+                        vector<Territory*> territories = map->getTerritories();
+                        int j = 0; // index used to loop through the player array.
+                        for(int i = 0; i < territories.size(); i++){
+                            territories[i]->setTerritoryOwner(players[j]);
+                            j++;
+                            if(j == players.size()){ // Reset j to 0 if its larger than the number of players
+                                j = 0;
+                            }
+                        }
+                        map->setTerritories(territories);
+
+                        // Give 50 armies to each players reinforcement pool
+                        for(int i = 0; i < players.size(); i++){
+                            players[i]->setReinforcementPool(50);
+                        }
+
+                        
+                        // Draws 2 cards to each players hand
+                        for(int i = 0; i < players.size(); i++){
+                            players[i]->getHand()->addCard(deck->draw());
+                            players[i]->getHand()->addCard(deck->draw());
+                        }
+                
+                        processCommand(arguments[0]);
+                    }
+                    else{
+                        cout << "ERROR: The game requires at least two players to start." << endl;
+                    }
+                }
+            }
+            else{
+                cout << "ERROR: Unrecognized command in the current state." << endl;
+            }
+            cout << endl;
+    }
+}
+
+ostream& operator<<(ostream& os, const GameEngine& engine) {
+    os << "The map that is loaded:" << endl;
+    os << *engine.map << endl;
+
+    // Print territory ownership
+    for(int i = 0; i < engine.map->getTerritories().size(); i++){
+        os << engine.map->getTerritories()[i]->getTerritoryName() << " is owned by: " << engine.map->getTerritories()[i]->getTerritoryOwner()->getName() << endl;
+    }
+
+    // Print information about each player
+    os << endl << "The players in the game: " << endl;
+    for(int i = 0; i < engine.players.size(); i++){
+        os << "Player " << i << ": " << engine.players[i]->getName() << endl;
+        os << "Their reinforcement pool: " << engine.players[i]->getReinforcementPool() << endl;
+        os << *(engine.players[i]->getHand()) << endl;
+    }
+
+    // Print deck
+    os << "The deck: " << endl;
+    os << *(engine.deck) << endl;
+
+    return os;
+} 
