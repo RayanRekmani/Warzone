@@ -1,5 +1,15 @@
 // developed by Lyna Taleb, 40210567
+// appended by Rayan Rekmani 40283058
+// appended by Adam Blevins 40255384
+#pragma once
 #include "GameEngine.h"
+#include "CommandProcessing.h"
+#include <random>
+#include "Player.h"
+#include <iostream>
+#include "Cards.h"
+#include "LoggingObserver.h"
+#include "Map.h"
 #include <algorithm>
 
 /*
@@ -112,14 +122,15 @@ void GameEngine::initializeStates() {
     start->addTransition("loadmap", map_loaded);
     map_loaded->addTransition("validatemap", map_validated);
     map_validated->addTransition("addplayer", players_added);
-    players_added->addTransition("assigncountries", assign_reinforcement);
+    players_added->addTransition("addplayer", players_added);
+    players_added->addTransition("gamestart", assign_reinforcement);
     assign_reinforcement->addTransition("issueorder", issue_orders);
     issue_orders->addTransition("endissueorders", execute_orders);
     execute_orders->addTransition("endexecorders", assign_reinforcement);
     execute_orders->addTransition("win", win);
     win->addTransition("play", start);
     win->addTransition("end", end);
-
+    
     states->push_back(start);
     states->push_back(map_loaded);
     states->push_back(map_validated);
