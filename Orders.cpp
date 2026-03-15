@@ -274,14 +274,14 @@ void OrdersList::remove(int index) {
     orders.erase(orders.begin() + index);
 }
 
-void OrdersList::move(int fromIndex, int toIndex) {
-    if (fromIndex < 0 || fromIndex >= orders.size() ||
-        toIndex < 0 || toIndex >= orders.size())
+void OrdersList::move(int i, int j) {
+    if (i < 0 || i >= orders.size() ||
+        j < 0 || j >= orders.size())
         throw std::out_of_range("Index out of range");
 
-    Order* temp = orders[fromIndex];
-    orders.erase(orders.begin() + fromIndex);
-    orders.insert(orders.begin() + toIndex, temp);
+    Order* temp = orders[i];
+    orders.erase(orders.begin() + i);
+    orders.insert(orders.begin() + j, temp);
 }
 
 Order* OrdersList::getOrder(int index) const {
