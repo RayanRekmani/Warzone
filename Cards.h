@@ -28,7 +28,7 @@ class Hand {
         int getSize(); // Returns the number of cards in the hand.
         void setPlayer(Player* p); // Sets player attribute to Player pointer p.
         void playCard(int, Deck*, OrdersList*); // Calls the play() method of a card stored in the hand at index i. Returns corresponding order to card type and puts the card back in the deck.
-        ostream& print(ostream&); // Prints each card in the hand.
+        friend ostream& operator <<(ostream&, Hand&);
         ~Hand(); // Deconstructor
     private:
         vector<Card*> hand; // Holds the cards in the player's hand.
@@ -49,14 +49,17 @@ class Deck {
         void drawToHand(Hand*); // Removes bottom card from deck and adds it to a hand.
         void addCard(Card*); // Adds a card to the end of the deck
         int getSize(); // Returns size of the deck vector.
-        ostream& print(ostream&); // Prints all the cards in the deck, first to last.
+        friend ostream& operator <<(ostream&, Deck&);
         Deck& operator=(const Deck&); // Assignment operator overload
         void shuffle(); // Shuffles the deck
         ~Deck(); // Deconstructor
     private:
-        vector<Card*> deck; // Vector that stores all the cards in the deck
-
-
+        vector<Card*> deck; // Vector that stores all the cards in the decks
+        const static int NUM_OF_BOMB_CARDS = 4;
+        const static int NUM_OF_DIPLOMACY_CARDS = 4;
+        const static int NUM_OF_AIRLIFT_CARDS = 4;
+        const static int NUM_OF_BLOCKADE_CARDS = 4;
+        const static int NUM_OF_REINFORCEMENT_CARDS = 4;
 
 };
 
