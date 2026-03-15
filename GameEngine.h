@@ -11,6 +11,7 @@
 #include "Map.h"
 #include "Player.h"
 #include "Orders.h"
+#include "LoggingObserver.h"
 
 using namespace std; // for readability
 
@@ -40,7 +41,7 @@ private:
 };
 
 // GAMEENGINE CLASS --------------------------------------------------------------------
-class GameEngine {
+class GameEngine : public Subject, public ILoggable {
 public:
     GameEngine();
     GameEngine(const GameEngine& other);
@@ -61,6 +62,8 @@ public:
     void reinforcementPhase(); //assign reinforcement armies to players
     void issueOrdersPhase(); //players issue orders in round robin fashion
     void executeOrdersPhase(); //execute all deploy first then remaining orders
+
+    string stringToLog() const override;
 
     friend ostream& operator<<(ostream& os, const GameEngine& engine);
 
