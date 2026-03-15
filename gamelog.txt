@@ -1,0 +1,7 @@
+=== Game Log ===
+GameEngine transitioned to state: map_loaded
+GameEngine transitioned to state: map_validated
+Command: addplayer
+Command Effect: Player added.
+Order added to list: Deploy
+Order added to list: Advance

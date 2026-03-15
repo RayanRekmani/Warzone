@@ -135,10 +135,15 @@ void GameEngine::processCommand(string command) {
     if (currentState->isCommandValid(command)) {
         currentState = currentState->getNextState(command);
         cout << "Transitioned to state: " << *currentState << endl;
+        notify(this);
     } else { //if not valid, print error msg and stay in current state
         cout << "ERROR: Command not allowed in current state." << endl;
     }
 } //validates user command by checking if it is a valid transition from current state, if valid updates current state to next state
+
+string GameEngine::stringToLog() const {
+    return "GameEngine transitioned to state: " + currentState->getName();
+}
 
 void GameEngine::start() {
     string command;

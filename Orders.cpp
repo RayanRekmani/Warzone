@@ -1,14 +1,8 @@
 #include "Orders.h"
-#include <stdexcept>
-#include <algorithm>
-#include <random>
-
-#include "Map.h"
 #include "Player.h"
-
-// =======================================================
-// Order Base Class Implementation
-// =======================================================
+#include "Map.h"
+#include <stdexcept>
+#include <random>
 
 Order::Order(const std::string& type) : orderType(type), effect("") {}
 
@@ -108,13 +102,18 @@ bool Deploy::execute() {
     const int newArmySize = target->getArmySize() + numArmies;
     target->setArmySize(newArmySize);
 
-    effect = "Deploy order executed." + std::to_string(numArmies) + 
+    effect = "Deploy order executed." + std::to_string(numArmies) +
             " armies to " + target->getTerritoryName();
+    notify(this);
     return true;
 }
 
 Order* Deploy::clone() const {
     return new Deploy(*this);
+}
+
+std::string Deploy::stringToLog() const {
+    return "Order Executed: Deploy | Effect: " + effect;
 }
 
 // =======================================================
@@ -193,6 +192,7 @@ bool Advance::execute() {
         source->setArmySize(source->getArmySize() - numArmies);
         target->setArmySize(target->getArmySize() + numArmies);
         effect = "Advance order executed: armies moved between owned territories.";
+        notify(this);
         return true;
     }
 
@@ -200,8 +200,8 @@ bool Advance::execute() {
     // Remove attacking armies from source territory
     source->setArmySize(source->getArmySize() - numArmies);
 
-    int attacking = numArmies;           // number of armies attacking
-    int defending = target->getArmySize(); // number of defending armies
+    int attacking = numArmies;
+    int defending = target->getArmySize();
 
     // Random generator for battle simulation
     static std::mt19937 rng(std::random_device{}());
@@ -210,7 +210,7 @@ bool Advance::execute() {
     // Step 3a: Calculate defender casualties
     int defendersKilled = 0;
     for (int i = 0; i < attacking; ++i) {
-        if (dist(rng) <= 0.60) { // 60% chance per attacking unit
+        if (dist(rng) <= 0.60) {
             ++defendersKilled;
         }
     }
@@ -218,48 +218,48 @@ bool Advance::execute() {
     // Step 3b: Calculate attacker casualties
     int attackersKilled = 0;
     for (int i = 0; i < defending; ++i) {
-        if (dist(rng) <= 0.70) { // 70% chance per defending unit
+        if (dist(rng) <= 0.70) {
             ++attackersKilled;
         }
     }
 
-    // Make sure we don't subtract more than available
     defendersKilled = std::min(defendersKilled, defending);
     attackersKilled = std::min(attackersKilled, attacking);
 
-    // Update remaining armies
     attacking -= attackersKilled;
     defending -= defendersKilled;
 
     // Step 4: Determine outcome
     if (defending == 0) {
-        // Attacker conquered the territory
         Player* previousOwner = target->getTerritoryOwner();
         if (previousOwner != nullptr && previousOwner != issuer) {
-            previousOwner->removeTerritory(target); // remove from defender's list
+            previousOwner->removeTerritory(target);
         }
 
-        target->setTerritoryOwner(issuer);   // transfer ownership
+        target->setTerritoryOwner(issuer);
         if (issuer != nullptr) {
-            issuer->addTerritory(target);    // add to attacker's list
+            issuer->addTerritory(target);
         }
 
-        target->setArmySize(attacking);      // place surviving attackers
-        issuer->setConqueredTerritoryThisTurn(true); // mark for card reward
+        target->setArmySize(attacking);
+        issuer->setConqueredTerritoryThisTurn(true);
 
         effect = "Advance order executed: territory conquered.";
     } else {
-        // Attack failed, defenders remain
         target->setArmySize(defending);
-        // Surviving attackers are lost (do NOT return to source)
         effect = "Advance order executed: attack failed.";
     }
 
+    notify(this);
     return true;
 }
 
 Order* Advance::clone() const {
     return new Advance(*this);
+}
+
+std::string Advance::stringToLog() const {
+    return "Order Executed: Advance | Effect: " + effect;
 }
 
 // =======================================================
@@ -317,9 +317,10 @@ bool Bomb::execute() {
         return false;
     }
     int current = target->getArmySize();
-    int reduced = current / 2; // remove half the armies (round down)
+    int reduced = current / 2;
     target->setArmySize(reduced);
     effect = "Bomb order executed.";
+    notify(this);
     return true;
 }
 
@@ -333,6 +334,10 @@ void Bomb::setTarget(Territory* t) {
 
 Order* Bomb::clone() const {
     return new Bomb(*this);
+}
+
+std::string Bomb::stringToLog() const {
+    return "Order Executed: Bomb | Effect: " + effect;
 }
 
 // =======================================================
@@ -390,19 +395,19 @@ bool Blockade::execute() {
         effect = "Blockade order is invalid.";
         return false;
     }
-    target->setArmySize(target->getArmySize() * 2);  // Double the number of armies on the target territory
+    target->setArmySize(target->getArmySize() * 2);
 
-    // Get/create the Neutral player to take ownership of the territory
     Player* neutral = getNeutralPlayer();
-    if (issuer != nullptr) {                          // Remove the territory from the issuing player's list
+    if (issuer != nullptr) {
         issuer->removeTerritory(target);
     }
-    target->setTerritoryOwner(neutral);             // Transfer ownership to the Neutral player
+    target->setTerritoryOwner(neutral);
     if (neutral != nullptr) {
         neutral->addTerritory(target);
     }
 
     effect = "Blockade order executed.";
+    notify(this);
     return true;
 }
 
@@ -416,6 +421,10 @@ void Blockade::setTarget(Territory* t) {
 
 Order* Blockade::clone() const {
     return new Blockade(*this);
+}
+
+std::string Blockade::stringToLog() const {
+    return "Order Executed: Blockade | Effect: " + effect;
 }
 
 // =======================================================
@@ -476,22 +485,17 @@ bool Airlift::validate() {
 }
 
 bool Airlift::execute() {
-    // First, check if the order is valid (ownership, armies, territories exist, etc.)
     if (!validate()) {
-        effect = "Airlift order is invalid."; // if invalid, set effect message
-        return false;                         // stop execution
+        effect = "Airlift order is invalid.";
+        return false;
     }
 
-    // Remove the armies from the source territory
     source->setArmySize(source->getArmySize() - numArmies);
-
-    // Add the armies to the target territory
     target->setArmySize(target->getArmySize() + numArmies);
 
-    // Set the effect message to indicate successful execution
     effect = "Airlift order executed.";
-
-    return true; // indicate that execution succeeded
+    notify(this);
+    return true;
 }
 
 void Airlift::setIssuer(Player* p) {
@@ -512,6 +516,10 @@ void Airlift::setNumArmies(int n) {
 
 Order* Airlift::clone() const {
     return new Airlift(*this);
+}
+
+std::string Airlift::stringToLog() const {
+    return "Order Executed: Airlift | Effect: " + effect;
 }
 
 // =======================================================
@@ -548,7 +556,7 @@ bool Negotiate::validate() {
     if (issuer == nullptr || target == nullptr) {
         return false;
     }
-    if (issuer == target) {     // Check that the target is not the same as the issuer
+    if (issuer == target) {
         return false;
     }
     return true;
@@ -560,13 +568,10 @@ bool Negotiate::execute() {
         return false;
     }
 
-    // Establish a temporary pact between the issuer and target for the current turn
-    // Add each player to the other's negotiatedPlayers list (stored in the Player class).
-    // This records a temporary truce so any attack between these two players during
-    // the current turn will be considered invalid.
-    issuer->addNegotiatedPlayer(target);    // Issuer will not attack target this turn
-    target->addNegotiatedPlayer(issuer);    // Target will not attack issuer this turn
+    issuer->addNegotiatedPlayer(target);
+    target->addNegotiatedPlayer(issuer);
     effect = "Negotiate order executed.";
+    notify(this);
     return true;
 }
 
@@ -580,6 +585,10 @@ void Negotiate::setTarget(Player* p) {
 
 Order* Negotiate::clone() const {
     return new Negotiate(*this);
+}
+
+std::string Negotiate::stringToLog() const {
+    return "Order Executed: Negotiate | Effect: " + effect;
 }
 
 // =======================================================
@@ -616,10 +625,11 @@ OrdersList::~OrdersList() {
 
 void OrdersList::addOrder(Order* order) {
     orders.push_back(order);
+    notify(this);
 }
 
 void OrdersList::remove(int index) {
-    if (index < 0 || index >= orders.size())
+    if (index < 0 || index >= (int)orders.size())
         throw std::out_of_range("Index out of range");
 
     delete orders[index];
@@ -627,8 +637,8 @@ void OrdersList::remove(int index) {
 }
 
 void OrdersList::move(int i, int j) {
-    if (i < 0 || i >= orders.size() ||
-        j < 0 || j >= orders.size())
+    if (i < 0 || i >= (int)orders.size() ||
+        j < 0 || j >= (int)orders.size())
         throw std::out_of_range("Index out of range");
 
     Order* temp = orders[i];
@@ -637,7 +647,7 @@ void OrdersList::move(int i, int j) {
 }
 
 Order* OrdersList::getOrder(int index) const {
-    if (index < 0 || index >= orders.size())
+    if (index < 0 || index >= (int)orders.size())
         throw std::out_of_range("Index out of range");
 
     return orders[index];
@@ -657,4 +667,9 @@ std::ostream& operator<<(std::ostream& out, const OrdersList& list) {
         out << *(list.orders[i]) << std::endl;
     }
     return out;
+}
+
+std::string OrdersList::stringToLog() const {
+    if (orders.empty()) return "OrdersList: no order added.";
+    return "Order added to list: " + orders.back()->getOrderType();
 }

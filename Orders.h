@@ -2,6 +2,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include "LoggingObserver.h"
 
 class Player;
 class Territory;
@@ -14,7 +15,7 @@ class DiplomacyCard;
 // Base Class: Order
 // =======================================================
 
-class Order {
+class Order : public Subject, public ILoggable {
 protected:
     std::string orderType;
     std::string effect;
@@ -36,7 +37,7 @@ public:
 
     // Polymorphic copy
     virtual Order* clone() const = 0;
-
+virtual std::string stringToLog() const = 0;
     // Stream insertion
     friend std::ostream& operator<<(std::ostream& out, const Order& order);
 };
@@ -56,6 +57,7 @@ public:
     bool validate() override;
     bool execute() override;
     Order* clone() const override;
+     std::string stringToLog() const override;
 
 private:
     Player* issuer;
@@ -75,6 +77,7 @@ public:
     bool validate() override;
     bool execute() override;
     Order* clone() const override;
+     std::string stringToLog() const override;
 
 private:
     Player* issuer;
@@ -93,6 +96,7 @@ public:
     bool validate() override;
     bool execute() override;
     Order* clone() const override;
+     std::string stringToLog() const override;
 
     void setIssuer(Player* p);
     void setTarget(Territory* t);
@@ -116,6 +120,7 @@ public:
     bool validate() override;
     bool execute() override;
     Order* clone() const override;
+     std::string stringToLog() const override;
 
     void setIssuer(Player* p);
     void setTarget(Territory* t);
@@ -139,6 +144,7 @@ public:
     bool validate() override;
     bool execute() override;
     Order* clone() const override;
+     std::string stringToLog() const override;
 
     void setIssuer(Player* p);
     void setSource(Territory* t);
@@ -166,6 +172,7 @@ public:
     bool validate() override;
     bool execute() override;
     Order* clone() const override;
+     std::string stringToLog() const override;
 
     void setIssuer(Player* p);
     void setTarget(Player* p);
@@ -183,7 +190,7 @@ private:
 // OrdersList Class (Container)
 // =======================================================
 
-class OrdersList {
+class OrdersList : public Subject, public ILoggable  {
 private:
     std::vector<Order*> orders;
 
@@ -203,7 +210,7 @@ public:
     int size() const;
 
     void printOrders() const;
-
+std::string stringToLog() const;
     // Stream insertion
     friend std::ostream& operator<<(std::ostream& out, const OrdersList& list);
 };
