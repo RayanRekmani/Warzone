@@ -1,21 +1,12 @@
 // developed by Lyna Taleb, 40210567
-// appended by Rayan Rekmani 40283058
-// appended by Adam Blevins 40255384
 #include "GameEngine.h"
-#include "CommandProcessing.h"
-#include <random>
-#include "Player.h"
-#include <iostream>
-#include "Cards.h"
-#include "LoggingObserver.h"
-#include "Orders.h"
-#include "Map.h"
 #include <algorithm>
+
 /*
 control flow of the game w a state machine using a pointer to a state obj
 when user enters valid command, pointer is updated to reference next state
 (no implementation of game, just state transitions)
-*/
+*/ 
 
 // STATE CLASS --------------------------------------------------------------------
 
@@ -46,7 +37,7 @@ State::~State() {
 
 string State::getName() const {
     return *name;
-} //returns name of current state
+} //returns name of current state 
 
 void State::addTransition(string command, State* nextState) {
     (*transitions)[command] = nextState;
@@ -71,11 +62,20 @@ GameEngine::GameEngine() {
     states = new vector<State*>();
     initializeStates();
     currentState = states->at(0); // start state
+    commandProcessor = nullptr;
+    deck = nullptr;
+    maploader = nullptr;
+    map = nullptr;
 } //constructor initializes all states and transitions + sets current state to start state
 
 GameEngine::GameEngine(const GameEngine& other) {
     states = new vector<State*>(*other.states);
     currentState = other.currentState;
+    commandProcessor = other.commandProcessor;
+    deck = other.deck;
+    maploader = other.maploader;
+    map = other.map;
+    players = other.players;
 } //copy constructor (GameEngine copying isnt useed in the gameplay this is just to satisfy the rule of 3)
 
 GameEngine& GameEngine::operator=(const GameEngine& other) {
@@ -83,6 +83,11 @@ GameEngine& GameEngine::operator=(const GameEngine& other) {
         delete states;
         states = new vector<State*>(*other.states);
         currentState = other.currentState;
+        commandProcessor = other.commandProcessor;
+        deck = other.deck;
+        maploader = other.maploader;
+        map = other.map;
+        players = other.players;
     }
     return *this;
 } //same reason as copy constructor, also deallocate existing memory to prevent leaks
@@ -93,7 +98,7 @@ GameEngine::~GameEngine() {
     delete states;
 } //destructor deallocates memory for all state objects and the states vector itself
 
-void GameEngine::initializeStates() {
+void GameEngine::initializeStates() { 
     State* start = new State("start");
     State* map_loaded = new State("map_loaded");
     State* map_validated = new State("map_validated");
@@ -107,8 +112,7 @@ void GameEngine::initializeStates() {
     start->addTransition("loadmap", map_loaded);
     map_loaded->addTransition("validatemap", map_validated);
     map_validated->addTransition("addplayer", players_added);
-    players_added->addTransition("addplayer", players_added);
-    players_added->addTransition("gamestart", assign_reinforcement);
+    players_added->addTransition("assigncountries", assign_reinforcement);
     assign_reinforcement->addTransition("issueorder", issue_orders);
     issue_orders->addTransition("endissueorders", execute_orders);
     execute_orders->addTransition("endexecorders", assign_reinforcement);
@@ -136,214 +140,259 @@ void GameEngine::processCommand(string command) {
     }
 } //validates user command by checking if it is a valid transition from current state, if valid updates current state to next state
 
+void GameEngine::start() {
+    string command;
+    while (currentState->getName() != "end") {
+        cout << "\nCurrent state: " << *currentState << endl;
+        cout << "> ";
+        cin >> command;
+        processCommand(command);
+    }
+} //this is the main game loop that will keep looping until user reaches the end state, it prompts user for commands and processes them
+
+void GameEngine::setPlayers(const vector<Player*>& players) {
+    this->players = players;
+} //sets list of players for assignment 2 gameplay loop
+
+void GameEngine::setDeck(Deck* deck) {
+    this->deck = deck;
+} //sets deck pointer used when players draw cards
+
+void GameEngine::setMap(Map* map) {
+    this->map = map;
+} //sets map pointer used for continent bonus and winner detection
+
 State* GameEngine::getCurrentState() const {
     return currentState;
-}
+} //returns current state pointer
 
-
-void GameEngine::setPlayers(const vector<Player*>& p) {
-    players = p;
-}
-
-void GameEngine::setDeck(Deck* d) {
-    deck = d;
-}
-
-void GameEngine::setMap(Map* m) {
-    map = m;
-}
-
-void GameEngine::startupPhase(){
-    cout << "Enter commands (type quit to stop)\n";
-    Command* c;
-    commandProcessor = new CommandProcessor(this);
-    deck = new Deck();
-    maploader = new MapLoader();
-
-    //while in startup phase, keep accepting commands, then process them.
-    while(getCurrentState()->getName() != "assign_reinforcement"){
-            cout << "Current State: " << getCurrentState()->getName() << endl;
-            cout << "> ";
-            c = commandProcessor->getCommand();
-
-            if(c->getCommand() == "quit"){ // If the user entered quit, break before doing anything else
-                break;
-            }
-
-            vector<string> arguments; // Stores the arguments of a command. There should only ever be two arguments max in a command maximum.
-
-            if(c->getCommand().find(" ") < c->getCommand().length()){ // If there's a space in the command, split it up the command.
-                arguments.push_back(c->getCommand().substr(0, c->getCommand().find(" "))); // Puts the first argument in the arguments vector.
-                arguments.push_back(c->getCommand().substr(c->getCommand().find(" ") + 1, c->getCommand().length())); // Puts everything else in the second argument.
-            }
-            else{
-                arguments.push_back(c->getCommand());
-                arguments.push_back(""); // Some times arguments[1] will be called, this line prevents the program from crashing if there is only one argument in the command.
-            }
-
-            if(commandProcessor->validate(c)){
-                // The start of a big else if chain to do an action based off the command.
-                if(arguments[0] == "loadmap"){
-                    string mapName = arguments[1];
-
-                    if(mapName.substr(0, 5) != "maps/") { // If user forgot to enter maps/ in the file name, add it for them.
-                        mapName = "maps/" + mapName;
-                    }
-                    if(mapName.substr(mapName.length() - 4, mapName.length()) != ".map") { // If user forgot to enter the .map suffix in the file name, add it for them.
-                        mapName += ".map";
-                    }
-
-                    map = maploader->loadMap(mapName);
-                    if(map){ // If the map loaded successfully, transition to validatemap state.
-                        processCommand(arguments[0]);
-                    }
-
-                }
-
-                else if(arguments[0] == "validatemap"){
-                    bool isValid = map->validateMap();
-                    if(isValid){ // If the map is valid, transition to addplayer state.
-                        processCommand(arguments[0]);
-                    }
-                }
-
-                else if(arguments[0] == "addplayer"){
-                    if(players.size() < 6){
-                        if(arguments[1] == ""){
-                            arguments[1] = "anonymous";
-                        }
-                        players.push_back(new Player(arguments[1]));
-                        processCommand(arguments[0]);
-                    }
-                    else{
-                        cout << "ERROR: The maximum number of players (6) has already been reached." << endl;
-                    }
-                }
-
-                else if(arguments[0] == "gamestart"){
-                    if(players.size() >= 2){
-                        // Randomize turn order
-                        auto rng = default_random_engine {};
-                        shuffle(players.begin(), players.end(), rng); // Randomize order of player vector, randomizing the paly order.
-                        
-                        // Give away all territories fairly
-                        vector<Territory*> territories = map->getTerritories();
-                        //shuffle(territories.begin(), territories.end(), rng); // Randomize order of player vector, randomizing the paly order. TODO DECIDE
-                        int j = 0; // index used to loop through the player array.
-                        for(int i = 0; i < territories.size(); i++){
-                            territories[i]->setTerritoryOwner(players[j]);
-                            j++;
-                            if(j == players.size()){ // Reset j to 0 if its larger than the number of players
-                                j = 0;
-                            }
-                        }
-                        map->setTerritories(territories);
-
-                        // Give 50 armies to each players reinforcement pool
-                        for(int i = 0; i < players.size(); i++){
-                            players[i]->setReinforcementPool(50);
-                        }
-
-                        
-                        // Draws 2 cards to each players hand
-                        for(int i = 0; i < players.size(); i++){
-                            players[i]->getHand()->addCard(deck->draw());
-                            players[i]->getHand()->addCard(deck->draw());
-                        }
-                
-                        processCommand(arguments[0]);
-                    }
-                    else{
-                        cout << "ERROR: The game requires at least two players to start." << endl;
-                    }
-                }
-            }
-            else{
-                cout << "ERROR: Unrecognized command in the current state." << endl;
-            }
-            cout << endl;
+bool GameEngine::ownsEntireContinent(Player* player, Continent* continent) const {
+    if (player == nullptr || continent == nullptr || map == nullptr) {
+        return false;
     }
-} // Completes the start up phase of the game
 
-void GameEngine::start() {
-    // Print all territories and their army sizes for a player
-    auto printTerritories = [](Player* p) {
-        cout << "Territories for " << p->getName() << ": ";
-        vector<Territory*>* territories = p->getTerritories();
+    vector<Territory*> continentTerritories = map->getTerritoriesByContinent(continent);
 
-        // Handle the case where the player has no territories
-        if (territories == nullptr || territories->empty()) {
-            cout << "(none)\n";
-            return;
+    if (continentTerritories.empty()) {
+        return false;
+    }
+
+    for (Territory* t : continentTerritories) {
+        if (t == nullptr || t->getTerritoryOwner() != player) {
+            return false;
         }
+    }
 
-        // Iterate over all territories and print name and army size
-        for (size_t i = 0; i < territories->size(); ++i) {
-            Territory* t = (*territories)[i];
-            if (t == nullptr) continue;
+    return true;
+} //checks if every territory in continent belongs to given player
 
-            cout << t->getTerritoryName() << "(" << t->getArmySize() << ")";
-            if (i + 1 < territories->size()) {
-                cout << ", ";
-            }
+void GameEngine::removeEliminatedPlayers() {
+    players.erase(
+        remove_if(players.begin(), players.end(),
+            [](Player* p) {
+                return p == nullptr || p->getTerritories()->empty();
+            }),
+        players.end()
+    );
+} //removes all players that no longer own any territory
+
+bool GameEngine::hasWinner() const {
+    if (players.size() == 1) {
+        return true;
+    }
+
+    if (map == nullptr) {
+        return false;
+    }
+
+    vector<Territory*> allTerritories = map->getTerritories();
+
+    if (allTerritories.empty()) {
+        return false;
+    }
+
+    Player* owner = allTerritories[0]->getTerritoryOwner();
+    if (owner == nullptr) {
+        return false;
+    }
+
+    for (Territory* t : allTerritories) {
+        if (t->getTerritoryOwner() != owner) {
+            return false;
         }
-        cout << "\n";
-    };
+    }
 
-    // Minimal test loop: executes one turn per player (one round)
-    cout << "=== Executing One Round (One Turn Per Player) ===\n";
+    return true;
+} //checks if one player owns every territory on the map
+
+Player* GameEngine::getWinner() const {
+    if (!hasWinner()) {
+        return nullptr;
+    }
+
+    if (players.size() == 1) {
+        return players[0];
+    }
+
+    vector<Territory*> allTerritories = map->getTerritories();
+    if (allTerritories.empty()) {
+        return nullptr;
+    }
+
+    return allTerritories[0]->getTerritoryOwner();
+} //returns winner pointer if game has ended
+
+void GameEngine::reinforcementPhase() {
+    if (map == nullptr) {
+        cout << "ERROR: No map loaded." << endl;
+        return;
+    }
+
+    cout << "\n=== Reinforcement Phase ===" << endl;
 
     for (Player* p : players) {
-        if (p == nullptr) continue;
+        if (p == nullptr) {
+            continue;
+        }
 
-        // Print start-of-turn header
-        cout << "\n-- Player Turn: " << p->getName() << " --\n";
+        int territoryCount = static_cast<int>(p->getTerritories()->size());
+        int reinforcementArmies = territoryCount / 3;
 
-        // Print territories and armies at the start of the turn
-        printTerritories(p);
+        if (reinforcementArmies < 3) {
+            reinforcementArmies = 3;
+        }
 
-        // Execute all orders in the player's order list
-        OrdersList* orders = p->getOrdersList();
-        if (orders != nullptr) {
-            for (int i = 0; i < orders->size(); ++i) {
-                Order* order = orders->getOrder(i);
-                if (order == nullptr) continue;
-
-                // Validate then execute, and print results
-                bool valid = order->validate();
-                cout << order->getOrderType() << " | Validate: " << (valid ? "true" : "false") << "\n";
-                order->execute();
-                cout << order->getOrderType() << " | Effect: " << order->getEffect() << "\n";
+        vector<Continent*> continents = map->getContinents();
+        for (Continent* c : continents) {
+            if (ownsEntireContinent(p, c)) {
+                reinforcementArmies += c->getExtraSoldiers();
             }
         }
 
-        // Print territories and armies at the end of the turn
-        printTerritories(p);
+        p->setReinforcementPool(p->getReinforcementPool() + reinforcementArmies);
 
-        // Check if player conquered at least one territory this turn
-        if (p->hasConqueredTerritoryThisTurn()) {
-            if (deck != nullptr) {
-                Card* drawn = deck->draw();
-                if (drawn != nullptr) {
-                    p->getHand()->addCard(drawn);
-                    cout << "Player " << p->getName() << " conquered a territory this turn; a card was awarded.\n";
-                } else {
-                    cout << "Player " << p->getName() << " conquered a territory this turn; no card available (deck empty).\n";
-                }
-            } else {
-                cout << "Player " << p->getName() << " conquered a territory this turn; no card awarded (deck not initialized).\n";
-            }
-
-            // Reset the conquered flag for the next round
-            p->setConqueredTerritoryThisTurn(false);
-        }
+        cout << p->getName() << " receives "
+             << reinforcementArmies
+             << " reinforcement armies." << endl;
     }
+} //assigns reinforcement armies based on territory count + continent bonus with minimum of 3
 
-    // End-of-round message
+void GameEngine::issueOrdersPhase() {
+    cout << "\n=== Issue Orders Phase ===" << endl;
+
     for (Player* p : players) {
         if (p != nullptr) {
+            p->setConqueredTerritoryThisTurn(false);
             p->clearNegotiatedPlayers();
         }
     }
-    cout << "\n=== End of Round ===\n";
-} // minimal test loop: one round per player
+
+    bool moreOrders = true;
+
+    while (moreOrders) {
+        moreOrders = false;
+
+        for (Player* p : players) {
+            if (p == nullptr) {
+                continue;
+            }
+
+            bool issued = p->issueOrder(deck, players);
+
+            if (issued) {
+                moreOrders = true;
+                cout << p->getName() << " issued an order." << endl;
+            }
+        }
+    }
+} //asks each player in round robin order to issue one order at a time until all players are done
+
+void GameEngine::executeOrdersPhase() {
+    cout << "\n=== Execute Orders Phase ===" << endl;
+
+    for (Player* p : players) {
+        if (p == nullptr) {
+            continue;
+        }
+
+        OrdersList* orders = p->getOrdersList();
+        int i = 0;
+
+        while (i < orders->size()) {
+            Order* currentOrder = orders->getOrder(i);
+
+            if (currentOrder != nullptr && currentOrder->getOrderType() == "Deploy") {
+                cout << p->getName() << " executes: " << *currentOrder << endl;
+                currentOrder->execute();
+                orders->remove(i);
+            } else {
+                i++;
+            }
+        }
+    }
+
+    bool ordersLeft = true;
+
+    while (ordersLeft) {
+        ordersLeft = false;
+
+        for (Player* p : players) {
+            if (p == nullptr) {
+                continue;
+            }
+
+            OrdersList* orders = p->getOrdersList();
+
+            if (orders->size() > 0) {
+                ordersLeft = true;
+
+                Order* currentOrder = orders->getOrder(0);
+                if (currentOrder != nullptr) {
+                    cout << p->getName() << " executes: " << *currentOrder << endl;
+                    currentOrder->execute();
+                }
+                orders->remove(0);
+            }
+        }
+    }
+
+    if (deck != nullptr) {
+        for (Player* p : players) {
+            if (p != nullptr && p->hasConqueredTerritoryThisTurn()) {
+                deck->drawToHand(p->getHand());
+                cout << p->getName() << " conquered a territory and drew a card." << endl;
+            }
+        }
+    }
+
+    removeEliminatedPlayers();
+} //executes all deploy orders first then executes remaining orders one by one in round robin order
+
+void GameEngine::mainGameLoop() {
+    cout << "\n=== Main Game Loop Started ===" << endl;
+
+    int turnCount = 0;
+    int maxTurns = 3;
+
+    while (!hasWinner() && turnCount < maxTurns) {
+        turnCount++;
+        cout << "\n--- Turn " << turnCount << " ---" << endl;
+
+        removeEliminatedPlayers();
+
+        if (players.size() <= 1) {
+            break;
+        }
+
+        reinforcementPhase();
+        issueOrdersPhase();
+        executeOrdersPhase();
+    }
+
+    Player* winner = getWinner();
+    if (winner != nullptr) {
+        cout << "\nWinner: " << winner->getName() << endl;
+    } else {
+        cout << "\nGame ended after " << maxTurns << " turns without a winner." << endl;
+    }
+} //controls the game until one player owns all territories or all other players are eliminated

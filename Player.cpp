@@ -3,7 +3,7 @@
 #include "Player.h"
 
 #include <iostream>
-
+#include <algorithm>
 
 #include "Map.h"     // Territory, Continent
 #include "Cards.h"   // Hand
@@ -81,12 +81,86 @@ void Player::issueOrder(Order* order) {
     orders->addOrder(order);
 }
 
+// issues one order at a time for the main game loop in assignment 2
+bool Player::issueOrder(Deck* deck, const std::vector<Player*>& allPlayers) {
+    if (territories == nullptr || territories->empty()) {
+        return false;
+    }
+
+    bool alreadyIssuedDeploy = false;
+    bool alreadyIssuedAdvance = false;
+    bool alreadyPlayedCard = false;
+
+    for (int i = 0; i < orders->size(); i++) {
+        Order* existingOrder = orders->getOrder(i);
+
+        if (existingOrder == nullptr) {
+            continue;
+        }
+
+        std::string type = existingOrder->getOrderType();
+
+        if (type == "Deploy") {
+            alreadyIssuedDeploy = true;
+        } else if (type == "Advance") {
+            alreadyIssuedAdvance = true;
+        } else {
+            alreadyPlayedCard = true;
+        }
+    }
+
+    // issue deploy once per turn
+    if (reinforcementPool > 0 && !alreadyIssuedDeploy) {
+        Territory* target = (*territories)[0];
+        if (target != nullptr) {
+            orders->addOrder(new Deploy(this, target, reinforcementPool));
+            return true;
+        }
+    }
+
+    // issue one advance order once per turn
+    if (!alreadyIssuedAdvance) {
+        for (Territory* source : *territories) {
+            if (source == nullptr || source->getArmySize() <= 1) {
+                continue;
+            }
+
+            std::vector<Territory*> neighbours = source->getNeighbours();
+            for (Territory* target : neighbours) {
+                if (target != nullptr && target->getTerritoryOwner() != this) {
+                    int armiesToMove = source->getArmySize() / 2;
+                    if (armiesToMove > 0) {
+                        orders->addOrder(new Advance(this, source, target, armiesToMove));
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+
+    // play at most one card order per turn
+    if (!alreadyPlayedCard && hand != nullptr && hand->getSize() > 0 && deck != nullptr) {
+        hand->playCard(0, deck, orders);
+        return true;
+    }
+
+    // player has no more orders to issue this turn
+    return false;
+}
+
 //Adds a Territory* to player's collection.
 
 void Player::addTerritory(Territory* t) {
     if (t == nullptr) {
         return;
     }
+
+    for (Territory* existing : *territories) {
+        if (existing == t) {
+            return;
+        }
+    }
+
     territories->push_back(t);
 }
 

@@ -9,6 +9,8 @@
 #include <map>
 #include "Cards.h"
 #include "Map.h"
+#include "Player.h"
+#include "Orders.h"
 
 using namespace std; // for readability
 
@@ -55,6 +57,11 @@ public:
 
     State* getCurrentState() const;
 
+    void mainGameLoop(); //main loop for assignment 2
+    void reinforcementPhase(); //assign reinforcement armies to players
+    void issueOrdersPhase(); //players issue orders in round robin fashion
+    void executeOrdersPhase(); //execute all deploy first then remaining orders
+
     friend ostream& operator<<(ostream& os, const GameEngine& engine);
 
 private:
@@ -66,4 +73,9 @@ private:
     Map* map;
     vector<Player*> players;
     void initializeStates(); //creates all states and transitions between them
+
+    bool ownsEntireContinent(Player* player, Continent* continent) const; //checks if player owns every territory in continent
+    void removeEliminatedPlayers(); //removes players with no territories left
+    bool hasWinner() const; //checks if game has winner
+    Player* getWinner() const; //returns winner if one exists
 };

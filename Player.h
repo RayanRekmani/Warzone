@@ -10,6 +10,8 @@ class Territory;    // from Map.h
 class Hand;         // from Cards.h
 class OrdersList;   // from Orders.h
 class Order;        // from Orders.h
+//ADDED LINE FOR GAMEENGINE PART 3
+class Deck;
 
 class Player {
 public:
@@ -26,6 +28,9 @@ public:
 
     // add order to orders list
     void issueOrder(Order* order);
+
+    //ADDED LINE FOR GAMEENGINE PART 3
+    bool issueOrder(Deck* deck, const std::vector<Player*>& allPlayers);
 
     // helper used by game to give player territories
     void addTerritory(Territory* t);
