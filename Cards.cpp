@@ -1,6 +1,7 @@
 // Written by Adam Blevins, 40255384
 
 // TODO: Finalize order creation during the play() method.
+#pragma once
 #include "Cards.h"
 #include "Orders.h"
 #include <iostream>
@@ -71,18 +72,14 @@ void Hand::setPlayer(Player* p){
     this->player = p;
 }
 
-// Prints each card in the hand.
-ostream& Hand::print(ostream& out){
-    out << "This hand contains: " << endl;
-    for(int i = 0; i < this->hand.size(); i++){
-        hand[i]->print(out);
-    }
-    return out;
-}
 
 // Redirects << operator to Hand's print method.
-ostream& operator <<(ostream& strm, Hand& a){
-    return a.print(strm);
+ostream& operator <<(ostream& strm, Hand& hand){
+    strm << "This hand contains: " << endl;
+    for(int i = 0; i < hand.hand.size(); i++){
+        hand.hand[i]->print(strm);
+    }
+    return strm;
 }
 
 // Destructor. Deletes every card in the hand.
@@ -99,9 +96,34 @@ Hand::~Hand(){
 *-------------------------------------------------------------------
 */
 
-// Default constructor
+// Default constructor, adds all the cards into the deck.
 Deck::Deck(){
+// Creates default number of bomb cards and adds them to the deck
+    for(int i = 0; i < NUM_OF_BOMB_CARDS; i++){
+        addCard(new BombCard());
+    }
 
+    // Creates default nubmer of diplomacy cards and adds them to the deck
+    for(int i = 0; i < NUM_OF_DIPLOMACY_CARDS; i++){
+        addCard(new DiplomacyCard());
+    }
+
+    // Creates default nubmer of airlift cards and adds them to the deck
+    for(int i = 0; i < NUM_OF_AIRLIFT_CARDS; i++){
+        addCard(new AirliftCard());
+    }
+
+    // Creates default nubmer of blockade cards and adds them to the deck
+    for(int i = 0; i < NUM_OF_BLOCKADE_CARDS; i++){
+        addCard(new BlockadeCard());
+    }
+
+    // Creates default nubmer of reinforcement cards and adds them to the deck
+    for(int i = 0; i < NUM_OF_REINFORCEMENT_CARDS; i++){
+        addCard(new ReinforcementCard());
+    }
+
+    Deck::shuffle();
 }
 
 // Copy Constructor  
@@ -139,18 +161,13 @@ void Deck::drawToHand(Hand* hand) {
     hand->addCard(this->draw());
 }
 
-// Print method to print every card in the deck.
-ostream& Deck::print(ostream& out){
-    out << "This deck contains: " << endl;
-    for(int i = 0; i < deck.size(); i++){
-        deck[i]->print(out); // Each card has a print() method that overrides the base Card classes print, meaning the correct type of card is printed through polymorphism.
-    }
-    return out;
-}
-
 // Redirects << operator to the print() method.
-ostream& operator<<(ostream& strm, Deck& a){
-    return a.print(strm);
+ostream& operator<<(ostream& strm, Deck& deck){
+        strm << "This deck contains: " << endl;
+    for(int i = 0; i < deck.deck.size(); i++){
+        deck.deck[i]->print(strm);
+    }
+    return strm;
 }
 
 // Assignment operator overload. Copies the deck from one Deck to another.
@@ -163,10 +180,10 @@ Deck& Deck::operator=(const Deck& d){
     return *this;
 }
 
-// Shuffles the deck using the random_shuffle() method.
+// Shuffles the deck using the shuffle() method.
 void Deck::shuffle(){
-    std::shuffle(this->deck.begin(), this->deck.end(),
-             std::default_random_engine(std::random_device{}()));
+    auto rng = default_random_engine {};
+    std::shuffle(this->deck.begin(), this->deck.end(), rng);
 }
 
 // Destructor. Deletes every card in the deck.
