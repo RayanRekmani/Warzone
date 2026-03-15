@@ -29,6 +29,7 @@ public:
 
     // helper used by game to give player territories
     void addTerritory(Territory* t);
+    void removeTerritory(Territory* t);
 
     // getters 
     std::string getName() const;
@@ -36,9 +37,14 @@ public:
     OrdersList* getOrdersList() const;
     std::vector<Territory*>* getTerritories() const;
     int getReinforcementPool() const;
+    bool hasConqueredTerritoryThisTurn() const;
+    bool isNegotiatingWith(Player* other) const;
 
     // setters
     void setReinforcementPool(int);
+    void setConqueredTerritoryThisTurn(bool value);
+    void addNegotiatedPlayer(Player* other);
+    void clearNegotiatedPlayers();
 
     // stream insertion operator
     friend std::ostream& operator<<(std::ostream& os, const Player& p);
@@ -50,6 +56,8 @@ private:
     Hand* hand;                             
     OrdersList* orders;                     
     int reinforcementPool;        
+    bool conqueredTerritoryThisTurn;
+    std::vector<Player*> negotiatedPlayers;
 
 private:
     // Rule of 3 helpers
