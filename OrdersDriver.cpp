@@ -1,62 +1,105 @@
 #include <iostream>
+#include <vector>
 #include "Orders.h"
+#include "Cards.h"
+#include "Player.h"
+#include "Map.h"
+#include "GameEngine.h"
 
 int main() {
     std::cout << "=== Orders Driver Test ===\n\n";
 
-    // 1. Create OrdersList container
-    OrdersList ordersList;
+    // Players
+    Player* p1 = new Player("Player1");
+    Player* p2 = new Player("Player2");
 
-    // 2. Create orders of every kind
-    Order* deployOrder   = new Deploy();
-    Order* advanceOrder  = new Advance();
-    Order* bombOrder     = new Bomb();
-    Order* blockadeOrder = new Blockade();
-    Order* airliftOrder  = new Airlift();
+    // Map + Territories
+    Continent* c1 = new Continent("C1", 0);
+    Territory* t1 = new Territory(p1, 0, 0, c1, 10, "A"); // owned by P1
+    Territory* t2 = new Territory(p2, 1, 0, c1, 0, "B");  // owned by P2, 0 armies -> guaranteed conquest
+    Territory* t3 = new Territory(p1, 0, 1, c1, 4, "C");  // owned by P1
+    Territory* t4 = new Territory(p2, 1, 1, c1, 3, "D");  // owned by P2
 
-    // 3. Add orders to OrdersList sequentially
-    ordersList.addOrder(deployOrder);
-    ordersList.addOrder(advanceOrder);
-    ordersList.addOrder(bombOrder);
-    ordersList.addOrder(blockadeOrder);
-    ordersList.addOrder(airliftOrder);
+    t1->addNeighbour(t2);
+    t2->addNeighbour(t1);
+    t1->addNeighbour(t4);
+    t4->addNeighbour(t1);
 
-    std::cout << "Initial orders in OrdersList:\n";
-    ordersList.printOrders();
-    std::cout << std::endl;
+    p1->addTerritory(t1);
+    p1->addTerritory(t3);
+    p2->addTerritory(t2);
+    p2->addTerritory(t4);
 
-    // 4. Validate and execute first order
-    std::cout << "Validating and executing first order:\n";
-    if (ordersList.getOrder(0)->validate()) {
-        ordersList.getOrder(0)->execute();
+    Map* map = new Map();
+    map->addContinent(c1);
+    map->addTerritory(t1);
+    map->addTerritory(t2);
+    map->addTerritory(t3);
+    map->addTerritory(t4);
+
+    // Deck for card rewards
+    Deck* deck = new Deck();
+    deck->addCard(new BombCard());
+    deck->addCard(new BlockadeCard());
+    deck->addCard(new AirliftCard());
+    deck->addCard(new DiplomacyCard());
+
+    // Orders issued by Player1
+    p1->issueOrder(new Deploy(p1, t1, 3));
+    p1->issueOrder(new Advance(p1, t1, t2, 5)); // conquest -> ownership transfer + card
+
+    DiplomacyCard dipCard;
+    Order* negotiateOrder = dipCard.play();
+    Negotiate* negotiate = dynamic_cast<Negotiate*>(negotiateOrder);
+    if (negotiate != nullptr) {
+        negotiate->setIssuer(p1);
+        negotiate->setTarget(p2);
+        p1->issueOrder(negotiate);
     }
-    std::cout << ordersList.getOrder(0)->getOrderType() 
-              << " | Effect: " << ordersList.getOrder(0)->getEffect() << "\n\n";
 
-    // 5. Move the last order (index 4) to position 1
-    ordersList.move(4, 1);
-    std::cout << "After moving last order to position 1:\n";
-    ordersList.printOrders();
-    std::cout << std::endl;
+    p1->issueOrder(new Advance(p1, t1, t4, 1)); // should be invalid after negotiate
 
-    // 6. Remove order at index 2
-    ordersList.remove(2);
-    std::cout << "After removing order at index 2:\n";
-    ordersList.printOrders();
-    std::cout << std::endl;
-
-    // 7. Execute all remaining orders
-    std::cout << "Executing all remaining orders:\n";
-    for (int i = 0; i < ordersList.size(); ++i) {
-        if (ordersList.getOrder(i)->validate()) {
-            ordersList.getOrder(i)->execute();
-        }
-        std::cout << ordersList.getOrder(i)->getOrderType()
-                  << " | Effect: " << ordersList.getOrder(i)->getEffect() << "\n";
+    AirliftCard airCard;
+    Order* airOrder = airCard.play();
+    Airlift* airlift = dynamic_cast<Airlift*>(airOrder);
+    if (airlift != nullptr) {
+        airlift->setIssuer(p1);
+        airlift->setSource(t3);
+        airlift->setTarget(t1);
+        airlift->setNumArmies(2);
+        p1->issueOrder(airlift);
     }
+
+    BombCard bombCard;
+    Order* bombOrder = bombCard.play();
+    Bomb* bomb = dynamic_cast<Bomb*>(bombOrder);
+    if (bomb != nullptr) {
+        bomb->setIssuer(p1);
+        bomb->setTarget(t4); // adjacent to t1
+        p1->issueOrder(bomb);
+    }
+
+    BlockadeCard blockCard;
+    Order* blockOrder = blockCard.play();
+    Blockade* blockade = dynamic_cast<Blockade*>(blockOrder);
+    if (blockade != nullptr) {
+        blockade->setIssuer(p1);
+        blockade->setTarget(t3);
+        p1->issueOrder(blockade);
+    }
+
+    // Game engine executes orders (one round per player)
+    GameEngine engine;
+    engine.setPlayers(std::vector<Player*>{p1, p2});
+    engine.setDeck(deck);
+    engine.setMap(map);
+    engine.start();
+
+    // Demonstrate ownership transfer after conquest and blockade
+    std::cout << "\nPost-round ownership checks:\n";
+    std::cout << "Territory B owner: " << t2->getTerritoryOwner()->getName() << "\n";
+    std::cout << "Territory C owner: " << t3->getTerritoryOwner()->getName() << "\n";
 
     std::cout << "\n=== End of Orders Driver Test ===\n";
-
-    // Destructor of OrdersList will clean up all dynamically allocated orders
     return 0;
 }
