@@ -16,6 +16,7 @@ Player::Player()
     , hand(new Hand(this))          // link hand to this player 
     , orders(new OrdersList()) {
     reinforcementPool = 0;
+    conqueredTerritoryThisTurn = false; // added for orders that can only be issued once per turn if a territory is conquered
 }
 
 Player::Player(const std::string& n)
@@ -24,6 +25,7 @@ Player::Player(const std::string& n)
     , hand(new Hand(this))          // link hand to this player
     , orders(new OrdersList()) {
     reinforcementPool = 0;
+    conqueredTerritoryThisTurn = false; // added for orders
 }
 
 Player::Player(const Player& other)
@@ -88,6 +90,20 @@ void Player::addTerritory(Territory* t) {
     territories->push_back(t);
 }
 
+//Removes a Territory from player's collection when a territory is lost to another player or neutral. 
+//This is used by the Advance order when an attack is successful and the target territory changes ownership.
+void Player::removeTerritory(Territory* t) {
+    if (t == nullptr || territories == nullptr) {
+        return;
+    }
+    for (auto it = territories->begin(); it != territories->end(); ++it) {
+        if (*it == t) {
+            territories->erase(it);
+            return;
+        }
+    }
+}
+
 
 std::string Player::getName() const {
     return *name;
@@ -111,6 +127,46 @@ int Player::getReinforcementPool() const {
 
 void Player::setReinforcementPool(int r){
     reinforcementPool = r;
+}
+
+// Checks if the player has conquered at least one territory this turn. 
+//This is used to determine if the player should receive a card at the end of the turn.
+bool Player::hasConqueredTerritoryThisTurn() const {
+    return conqueredTerritoryThisTurn;
+}
+
+void Player::setConqueredTerritoryThisTurn(bool value) {
+    conqueredTerritoryThisTurn = value;
+}
+
+// Checks if this player is currently negotiating with another player 
+//(if there is a temporary truce in effect between them for the current turn)
+bool Player::isNegotiatingWith(Player* other) const {
+    if (other == nullptr) {
+        return false;
+    }
+    for (Player* p : negotiatedPlayers) {
+        if (p == other) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void Player::addNegotiatedPlayer(Player* other) {
+    if (other == nullptr) {
+        return;
+    }
+    for (Player* p : negotiatedPlayers) {
+        if (p == other) {
+            return;
+        }
+    }
+    negotiatedPlayers.push_back(other);
+}
+
+void Player::clearNegotiatedPlayers() {
+    negotiatedPlayers.clear();
 }
 
 // stream output
@@ -149,4 +205,6 @@ void Player::copyFrom(const Player& other) {
     orders = new OrdersList(*other.orders); // uses OrdersList copy constructor
 
     reinforcementPool = other.reinforcementPool;
+    conqueredTerritoryThisTurn = other.conqueredTerritoryThisTurn;
+    negotiatedPlayers = other.negotiatedPlayers;
 }

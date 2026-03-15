@@ -1,7 +1,6 @@
 // Written by Adam Blevins, 40255384
 
 // TODO: Finalize order creation during the play() method.
-#pragma once
 #include "Cards.h"
 #include "Orders.h"
 #include <iostream>
@@ -166,7 +165,8 @@ Deck& Deck::operator=(const Deck& d){
 
 // Shuffles the deck using the random_shuffle() method.
 void Deck::shuffle(){
-    random_shuffle(this->deck.begin(), this->deck.end());
+    std::shuffle(this->deck.begin(), this->deck.end(),
+             std::default_random_engine(std::random_device{}()));
 }
 
 // Destructor. Deletes every card in the deck.

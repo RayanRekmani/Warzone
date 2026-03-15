@@ -1,7 +1,6 @@
 // developed by Lyna Taleb, 40210567
 // appended by Rayan Rekmani 40283058
 // appended by Adam Blevins 40255384
-#pragma once
 #include "GameEngine.h"
 #include "CommandProcessing.h"
 #include <random>
@@ -9,6 +8,7 @@
 #include <iostream>
 #include "Cards.h"
 #include "LoggingObserver.h"
+#include "Orders.h"
 #include "Map.h"
 #include <algorithm>
 /*
@@ -140,8 +140,17 @@ State* GameEngine::getCurrentState() const {
     return currentState;
 }
 
-State* GameEngine::getCurrentState() const {
-    return currentState;
+
+void GameEngine::setPlayers(const vector<Player*>& p) {
+    players = p;
+}
+
+void GameEngine::setDeck(Deck* d) {
+    deck = d;
+}
+
+void GameEngine::setMap(Map* m) {
+    map = m;
 }
 
 void GameEngine::startupPhase(){
@@ -257,11 +266,84 @@ void GameEngine::startupPhase(){
 } // Completes the start up phase of the game
 
 void GameEngine::start() {
-    string command;
-    while (currentState->getName() != "end") {
-        cout << "\nCurrent state: " << *currentState << endl;
-        cout << "> ";
-        cin >> command;
-        processCommand(command);
+    // Print all territories and their army sizes for a player
+    auto printTerritories = [](Player* p) {
+        cout << "Territories for " << p->getName() << ": ";
+        vector<Territory*>* territories = p->getTerritories();
+
+        // Handle the case where the player has no territories
+        if (territories == nullptr || territories->empty()) {
+            cout << "(none)\n";
+            return;
+        }
+
+        // Iterate over all territories and print name and army size
+        for (size_t i = 0; i < territories->size(); ++i) {
+            Territory* t = (*territories)[i];
+            if (t == nullptr) continue;
+
+            cout << t->getTerritoryName() << "(" << t->getArmySize() << ")";
+            if (i + 1 < territories->size()) {
+                cout << ", ";
+            }
+        }
+        cout << "\n";
+    };
+
+    // Minimal test loop: executes one turn per player (one round)
+    cout << "=== Executing One Round (One Turn Per Player) ===\n";
+
+    for (Player* p : players) {
+        if (p == nullptr) continue;
+
+        // Print start-of-turn header
+        cout << "\n-- Player Turn: " << p->getName() << " --\n";
+
+        // Print territories and armies at the start of the turn
+        printTerritories(p);
+
+        // Execute all orders in the player's order list
+        OrdersList* orders = p->getOrdersList();
+        if (orders != nullptr) {
+            for (int i = 0; i < orders->size(); ++i) {
+                Order* order = orders->getOrder(i);
+                if (order == nullptr) continue;
+
+                // Validate then execute, and print results
+                bool valid = order->validate();
+                cout << order->getOrderType() << " | Validate: " << (valid ? "true" : "false") << "\n";
+                order->execute();
+                cout << order->getOrderType() << " | Effect: " << order->getEffect() << "\n";
+            }
+        }
+
+        // Print territories and armies at the end of the turn
+        printTerritories(p);
+
+        // Check if player conquered at least one territory this turn
+        if (p->hasConqueredTerritoryThisTurn()) {
+            if (deck != nullptr) {
+                Card* drawn = deck->draw();
+                if (drawn != nullptr) {
+                    p->getHand()->addCard(drawn);
+                    cout << "Player " << p->getName() << " conquered a territory this turn; a card was awarded.\n";
+                } else {
+                    cout << "Player " << p->getName() << " conquered a territory this turn; no card available (deck empty).\n";
+                }
+            } else {
+                cout << "Player " << p->getName() << " conquered a territory this turn; no card awarded (deck not initialized).\n";
+            }
+
+            // Reset the conquered flag for the next round
+            p->setConqueredTerritoryThisTurn(false);
+        }
     }
-} //this is the main game loop that will keep looping until user reaches the end state, it prompts user for commands and processes them
+
+    // End-of-round message
+    for (Player* p : players) {
+        if (p != nullptr) {
+            p->clearNegotiatedPlayers();
+        }
+    }
+    cout << "\n=== End of Round ===\n";
+} // minimal test loop: one round per player

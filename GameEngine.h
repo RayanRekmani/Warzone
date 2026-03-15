@@ -49,6 +49,10 @@ public:
     void start(); //main game loopp
     void processCommand(string command); //validates transition and executes if valid
 
+    void setPlayers(const vector<Player*>& players);
+    void setDeck(Deck* deck);
+    void setMap(Map* map);
+
     State* getCurrentState() const;
 
     friend ostream& operator<<(ostream& os, const GameEngine& engine);
