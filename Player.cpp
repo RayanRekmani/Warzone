@@ -109,11 +109,23 @@ bool Player::issueOrder(Deck* deck, const std::vector<Player*>& allPlayers) {
         }
     }
 
-    // issue deploy once per turn
+    // issue deploy orders once per turn, split across owned territories
     if (reinforcementPool > 0 && !alreadyIssuedDeploy) {
-        Territory* target = (*territories)[0];
-        if (target != nullptr) {
-            orders->addOrder(new Deploy(this, target, reinforcementPool));
+        int ownedCount = static_cast<int>(territories->size());
+        if (ownedCount > 0) {
+            int base = reinforcementPool / ownedCount;
+            int remainder = reinforcementPool % ownedCount;
+
+            for (int i = 0; i < ownedCount; ++i) {
+                Territory* target = (*territories)[i];
+                if (target == nullptr) {
+                    continue;
+                }
+                int armies = base + (i < remainder ? 1 : 0);
+                if (armies > 0) {
+                    orders->addOrder(new Deploy(this, target, armies));
+                }
+            }
             return true;
         }
     }

@@ -325,6 +325,7 @@ void GameEngine::issueOrdersPhase() {
 
 void GameEngine::executeOrdersPhase() {
     cout << "\n=== Execute Orders Phase ===" << endl;
+    cout << "-- Step 1: Execute all Deploy orders --" << endl;
 
     for (Player* p : players) {
         if (p == nullptr) {
@@ -339,7 +340,9 @@ void GameEngine::executeOrdersPhase() {
 
             if (currentOrder != nullptr && currentOrder->getOrderType() == "Deploy") {
                 cout << p->getName() << " executes: " << *currentOrder << endl;
+                cout << "Validate: " << (currentOrder->validate() ? "true" : "false") << endl;
                 currentOrder->execute();
+                cout << "Effect: " << currentOrder->getEffect() << endl;
                 orders->remove(i);
             } else {
                 i++;
@@ -347,6 +350,7 @@ void GameEngine::executeOrdersPhase() {
         }
     }
 
+    cout << "-- Step 2: Execute remaining orders round-robin --" << endl;
     bool ordersLeft = true;
 
     while (ordersLeft) {
@@ -365,13 +369,16 @@ void GameEngine::executeOrdersPhase() {
                 Order* currentOrder = orders->getOrder(0);
                 if (currentOrder != nullptr) {
                     cout << p->getName() << " executes: " << *currentOrder << endl;
+                    cout << "Validate: " << (currentOrder->validate() ? "true" : "false") << endl;
                     currentOrder->execute();
+                    cout << "Effect: " << currentOrder->getEffect() << endl;
                 }
                 orders->remove(0);
             }
         }
     }
 
+    cout << "-- Step 3: Award cards for conquest --" << endl;
     if (deck != nullptr) {
         for (Player* p : players) {
             if (p != nullptr && p->hasConqueredTerritoryThisTurn()) {
