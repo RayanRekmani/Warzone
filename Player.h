@@ -13,6 +13,10 @@ class Order;        // from Orders.h
 //ADDED LINE FOR GAMEENGINE PART 3
 class Deck;
 
+PlayerStrategies* playerStrategies;
+void setPlayerStrategies(PlayerStrategies* playerStrategies);
+PlayerStrategies* getPlayerStrategies();
+
 class Player {
 public:
     // Constructors 
@@ -28,6 +32,8 @@ public:
 
     // add order to orders list
     void issueOrder(Order* order);
+
+    bool issueOrder(bool inDeployPhase);
 
     //ADDED LINE FOR GAMEENGINE PART 3
     bool issueOrder(Deck* deck, const std::vector<Player*>& allPlayers);

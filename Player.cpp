@@ -81,6 +81,17 @@ void Player::issueOrder(Order* order) {
     orders->addOrder(order);
 }
 
+bool Player::issueOrder(bool inDeployPhase) {
+    if (strategy == nullptr) {
+        std::cout << "[Player] No strategy assigned\n";
+        return false;
+    }
+
+    return strategy->issueOrder(inDeployPhase);
+}
+
+
+
 // issues one order at a time for the main game loop in assignment 2
 bool Player::issueOrder(Deck* deck, const std::vector<Player*>& allPlayers) {
     if (territories == nullptr || territories->empty()) {
