@@ -10,6 +10,7 @@ class Territory;    // from Map.h
 class Hand;         // from Cards.h
 class OrdersList;   // from Orders.h
 class Order;        // from Orders.h
+class PlayerStrategies; // from PlayerStrategies.h
 //ADDED LINE FOR GAMEENGINE PART 3
 class Deck;
 
@@ -29,8 +30,13 @@ public:
     // add order to orders list
     void issueOrder(Order* order);
 
+    bool issueOrder(bool inDeployPhase);
+
     //ADDED LINE FOR GAMEENGINE PART 3
     bool issueOrder(Deck* deck, const std::vector<Player*>& allPlayers);
+
+    void setPlayerStrategies(PlayerStrategies* playerStrategies);
+    PlayerStrategies* getPlayerStrategies() const;
 
     // helper used by game to give player territories
     void addTerritory(Territory* t);
@@ -63,6 +69,7 @@ private:
     int reinforcementPool;        
     bool conqueredTerritoryThisTurn;
     std::vector<Player*> negotiatedPlayers;
+    PlayerStrategies* strategy;
 
 private:
     // Rule of 3 helpers
