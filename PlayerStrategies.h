@@ -102,6 +102,7 @@ class CheaterPlayerStrategies : public PlayerStrategies {
     bool issueOrder(bool inDeployPhase) override;
     string getStrategyType() override;
     private:
+    bool conqueredThisTurn;
     friend ostream& operator<<(ostream& os, const CheaterPlayerStrategies& other);
 };
 
