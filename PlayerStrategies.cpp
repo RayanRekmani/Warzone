@@ -157,6 +157,77 @@ vector<Territory*> BenevolentPlayerStrategies::toDefend() {
     return defendList;
 }
 
+bool BenevolentPlayerStrategies::issueOrder(bool inDeployPhase) {
+    if (player == nullptr) {
+        return false;
+    }
+
+    OrdersList* orders = player->getOrdersList();
+    if (orders == nullptr) {
+        return false;
+    }
+
+    vector<Territory*> defendList = toDefend();
+    if (defendList.empty()) {
+        return false;
+    }
+
+    if (inDeployPhase) {
+        int reinforcementPool = player->getReinforcementPool();
+        if (reinforcementPool <= 0) {
+            return false;
+        }
+
+        Territory* weakest = defendList.front();
+        if (weakest == nullptr) {
+            return false;
+        }
+
+        orders->addOrder(new Deploy(player, weakest, reinforcementPool));
+        return true;
+    }
+
+    // Advance phase: only reinforce own weaker territories. Never attack.
+    for (Territory* target : defendList) {
+        if (target == nullptr) {
+            continue;
+        }
+
+        Territory* bestSource = nullptr;
+        int bestSourceArmies = 0;
+
+        for (Territory* source : *player->getTerritories()) {
+            if (source == nullptr || source == target) {
+                continue;
+            }
+            if (source->getTerritoryOwner() != player || target->getTerritoryOwner() != player) {
+                continue;
+            }
+            if (!source->isNeighbour(target)) {
+                continue;
+            }
+            if (source->getArmySize() <= 1) {
+                continue;
+            }
+
+            if (source->getArmySize() > bestSourceArmies) {
+                bestSource = source;
+                bestSourceArmies = source->getArmySize();
+            }
+        }
+
+        if (bestSource != nullptr) {
+            const int armiesToMove = (bestSourceArmies - 1) / 2;
+            if (armiesToMove > 0) {
+                orders->addOrder(new Advance(player, bestSource, target, armiesToMove));
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
 
 
 string BenevolentPlayerStrategies::getStrategyType() {
