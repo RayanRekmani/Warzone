@@ -37,7 +37,7 @@ public:
 
     // Polymorphic copy
     virtual Order* clone() const = 0;
-virtual std::string stringToLog() const = 0;
+    virtual std::string stringToLog() const = 0;
     // Stream insertion
     friend std::ostream& operator<<(std::ostream& out, const Order& order);
 };

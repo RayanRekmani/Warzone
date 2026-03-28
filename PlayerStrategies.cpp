@@ -4,7 +4,9 @@
 
 #include "PlayerStrategies.h"
 #include "Player.h"
+#include "Orders.h"
 
+#include <algorithm>
 #include <iostream>
 #include <ostream>
 
@@ -40,14 +42,28 @@ NeutralPlayerStrategies &NeutralPlayerStrategies::operator=(const NeutralPlayerS
 NeutralPlayerStrategies::~NeutralPlayerStrategies() = default;
 
 vector<Territory *> NeutralPlayerStrategies::toAttack() {
-    return {};
+    // Neutral strategy never initiates attacks.
+    return vector<Territory*>();
 }
 
 vector<Territory *> NeutralPlayerStrategies::toDefend() {
-    return {};
+    vector<Territory*> defendList;
+
+    if (player == nullptr || player->getTerritories() == nullptr) {
+        return defendList;
+    }
+
+    for (Territory* t : *player->getTerritories()) {
+        if (t != nullptr && t->getTerritoryOwner() == player) {
+            defendList.push_back(t);
+        }
+    }
+
+    return defendList;
 }
 
 bool NeutralPlayerStrategies::issueOrder(bool inDeployPhase) {
+    (void)inDeployPhase; // Neutral strategy does not issue any orders.
     return false;
 }
 
@@ -114,16 +130,34 @@ BenevolentPlayerStrategies& BenevolentPlayerStrategies::operator=(const Benevole
 BenevolentPlayerStrategies::~BenevolentPlayerStrategies() =default;
 
 vector<Territory *> BenevolentPlayerStrategies::toAttack() {
-    return {};
+    // Benevolent strategy does not initiate attacks.
+    return vector<Territory*>();
 }
 
 vector<Territory*> BenevolentPlayerStrategies::toDefend() {
-    return {};
+    vector<Territory*> defendList;
+    if (player == nullptr || player->getTerritories() == nullptr) {
+        return defendList;
+    }
+
+    for (Territory* t : *player->getTerritories()) {
+        if (t != nullptr && t->getTerritoryOwner() == player) {
+            defendList.push_back(t);
+        }
+    }
+
+    // Benevolent strategy prioritizes weakest territories first.
+    sort(defendList.begin(), defendList.end(), [](Territory* a, Territory* b) {
+        if (a->getArmySize() != b->getArmySize()) {
+            return a->getArmySize() < b->getArmySize();
+        }
+        return a->getTerritoryName() < b->getTerritoryName();
+    });
+
+    return defendList;
 }
 
-bool BenevolentPlayerStrategies::issueOrder(bool inDeployPhase) {
-    return true;
-}
+
 
 string BenevolentPlayerStrategies::getStrategyType() {
     return "Benevolent";
@@ -168,19 +202,23 @@ string HumanPlayerStrategies::getStrategyType() {
 
 CheaterPlayerStrategies::CheaterPlayerStrategies() {
     this->player = nullptr;
+    conqueredThisTurn = false;
 }
 
 CheaterPlayerStrategies::CheaterPlayerStrategies(Player* player) {
     this->player = player;
+    conqueredThisTurn = false;
 }
 
 CheaterPlayerStrategies::CheaterPlayerStrategies(const CheaterPlayerStrategies &other) {
     this->player = other.player;
+    conqueredThisTurn = other.conqueredThisTurn;
 }
 
 CheaterPlayerStrategies& CheaterPlayerStrategies::operator=(const CheaterPlayerStrategies &other) {
     if (this != &other) {
         this->player = other.player;
+        this->conqueredThisTurn = other.conqueredThisTurn;
     }
     return *this;
 }
@@ -188,14 +226,81 @@ CheaterPlayerStrategies& CheaterPlayerStrategies::operator=(const CheaterPlayerS
 CheaterPlayerStrategies::~CheaterPlayerStrategies() = default;
 
 vector<Territory*> CheaterPlayerStrategies::toAttack() {
-    return {};
+    vector<Territory*> attackList;
+    if (player == nullptr || player->getTerritories() == nullptr) {
+        return attackList;
+    }
+
+    for (Territory* owned : *player->getTerritories()) {
+        if (owned == nullptr || owned->getTerritoryOwner() != player) {
+            continue;
+        }
+
+        vector<Territory*> neighbours = owned->getNeighbours();
+        for (Territory* neighbour : neighbours) {
+            if (neighbour == nullptr || neighbour->getTerritoryOwner() == player) {
+                continue;
+            }
+            if (find(attackList.begin(), attackList.end(), neighbour) == attackList.end()) {
+                attackList.push_back(neighbour);
+            }
+        }
+    }
+
+    return attackList;
 }
 
 vector<Territory*> CheaterPlayerStrategies::toDefend() {
-    return {};
+    vector<Territory*> defendList;
+    if (player == nullptr || player->getTerritories() == nullptr) {
+        return defendList;
+    }
+
+    for (Territory* t : *player->getTerritories()) {
+        if (t != nullptr && t->getTerritoryOwner() == player) {
+            defendList.push_back(t);
+        }
+    }
+
+    return defendList;
 }
 
 bool CheaterPlayerStrategies::issueOrder(bool inDeployPhase) {
+    if (player == nullptr) {
+        return false;
+    }
+
+    if (inDeployPhase) {
+        conqueredThisTurn = false;
+        return false;
+    }
+
+    if (conqueredThisTurn) {
+        return false;
+    }
+
+    vector<Territory*> targets = toAttack();
+    if (targets.empty()) {
+        conqueredThisTurn = true;
+        return false;
+    }
+
+    for (Territory* target : targets) {
+        if (target == nullptr) {
+            continue;
+        }
+
+        Player* previousOwner = target->getTerritoryOwner();
+        if (previousOwner != nullptr && previousOwner != player) {
+            previousOwner->removeTerritory(target);
+        }
+
+        target->setTerritoryOwner(player);
+        player->addTerritory(target);
+    }
+
+    conqueredThisTurn = true;
+    player->setConqueredTerritoryThisTurn(true);
     return true;
 }
 
@@ -209,5 +314,3 @@ void printTerritoryVector(vector<Territory *> &v) {
     }
     cout << endl;
 }
-
-

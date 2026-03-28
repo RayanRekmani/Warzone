@@ -1,5 +1,6 @@
 #include "Orders.h"
 #include "Player.h"
+#include "PlayerStrategies.h"
 #include "Map.h"
 #include <stdexcept>
 #include <random>
@@ -197,6 +198,14 @@ bool Advance::execute() {
     }
 
     // Step 3: Attacking an enemy territory
+    Player* targetOwner = target->getTerritoryOwner();
+    if (targetOwner != nullptr && targetOwner != issuer) {
+        PlayerStrategies* targetStrategy = targetOwner->getPlayerStrategies();
+        if (targetStrategy != nullptr && targetStrategy->getStrategyType() == "Neutral") {
+            targetOwner->setPlayerStrategies(new AggressivePlayerStrategies(targetOwner));
+        }
+    }
+
     // Remove attacking armies from source territory
     source->setArmySize(source->getArmySize() - numArmies);
 

@@ -8,13 +8,15 @@
 #include "Map.h"     // Territory, Continent
 #include "Cards.h"   // Hand
 #include "Orders.h"  // Order, OrdersList, Deploy...
+#include "PlayerStrategies.h"
 
 
 Player::Player()
     : name(new std::string("anonymous"))
     , territories(new std::vector<Territory*>())
     , hand(new Hand(this))          // link hand to this player 
-    , orders(new OrdersList()) {
+    , orders(new OrdersList())
+    , strategy(nullptr) {
     reinforcementPool = 0;
     conqueredTerritoryThisTurn = false; // added for orders that can only be issued once per turn if a territory is conquered
 }
@@ -23,7 +25,8 @@ Player::Player(const std::string& n)
     : name(new std::string(n))
     , territories(new std::vector<Territory*>())
     , hand(new Hand(this))          // link hand to this player
-    , orders(new OrdersList()) {
+    , orders(new OrdersList())
+    , strategy(nullptr) {
     reinforcementPool = 0;
     conqueredTerritoryThisTurn = false; // added for orders
 }
@@ -32,7 +35,8 @@ Player::Player(const Player& other)
     : name(nullptr)
     , territories(nullptr)
     , hand(nullptr)
-    , orders(nullptr) {
+    , orders(nullptr)
+    , strategy(nullptr) {
     copyFrom(other);
 }
 
@@ -88,6 +92,22 @@ bool Player::issueOrder(bool inDeployPhase) {
     }
 
     return strategy->issueOrder(inDeployPhase);
+}
+
+void Player::setPlayerStrategies(PlayerStrategies* playerStrategies) {
+    if (strategy == playerStrategies) {
+        return;
+    }
+
+    delete strategy;
+    strategy = playerStrategies;
+    if (strategy != nullptr) {
+        strategy->setPlayer(this);
+    }
+}
+
+PlayerStrategies* Player::getPlayerStrategies() const {
+    return strategy;
 }
 
 
@@ -287,6 +307,9 @@ void Player::destroy() {
 
     delete orders;
     orders = nullptr;
+
+    delete strategy;
+    strategy = nullptr;
 }
 
 //copies values from another Player
@@ -304,4 +327,5 @@ void Player::copyFrom(const Player& other) {
     reinforcementPool = other.reinforcementPool;
     conqueredTerritoryThisTurn = other.conqueredTerritoryThisTurn;
     negotiatedPlayers = other.negotiatedPlayers;
+    strategy = nullptr;
 }

@@ -285,7 +285,7 @@ void GameEngine::reinforcementPhase() {
             }
         }
 
-        p->setReinforcementPool(p->getReinforcementPool() + reinforcementArmies);
+        p->setReinforcementPool(reinforcementArmies);
 
         cout << p->getName() << " receives "
              << reinforcementArmies
