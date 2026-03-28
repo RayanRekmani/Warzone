@@ -4,7 +4,9 @@
 
 #include "PlayerStrategies.h"
 #include "Player.h"
+#include "Orders.h"
 
+#include <algorithm>
 #include <iostream>
 #include <ostream>
 
@@ -114,16 +116,34 @@ BenevolentPlayerStrategies& BenevolentPlayerStrategies::operator=(const Benevole
 BenevolentPlayerStrategies::~BenevolentPlayerStrategies() =default;
 
 vector<Territory *> BenevolentPlayerStrategies::toAttack() {
-    return {};
+    // Benevolent strategy does not initiate attacks.
+    return vector<Territory*>();
 }
 
 vector<Territory*> BenevolentPlayerStrategies::toDefend() {
-    return {};
+    vector<Territory*> defendList;
+    if (player == nullptr || player->getTerritories() == nullptr) {
+        return defendList;
+    }
+
+    for (Territory* t : *player->getTerritories()) {
+        if (t != nullptr && t->getTerritoryOwner() == player) {
+            defendList.push_back(t);
+        }
+    }
+
+    // Benevolent strategy prioritizes weakest territories first.
+    sort(defendList.begin(), defendList.end(), [](Territory* a, Territory* b) {
+        if (a->getArmySize() != b->getArmySize()) {
+            return a->getArmySize() < b->getArmySize();
+        }
+        return a->getTerritoryName() < b->getTerritoryName();
+    });
+
+    return defendList;
 }
 
-bool BenevolentPlayerStrategies::issueOrder(bool inDeployPhase) {
-    return true;
-}
+
 
 string BenevolentPlayerStrategies::getStrategyType() {
     return "Benevolent";
@@ -209,5 +229,3 @@ void printTerritoryVector(vector<Territory *> &v) {
     }
     cout << endl;
 }
-
-
