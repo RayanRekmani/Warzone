@@ -42,14 +42,28 @@ NeutralPlayerStrategies &NeutralPlayerStrategies::operator=(const NeutralPlayerS
 NeutralPlayerStrategies::~NeutralPlayerStrategies() = default;
 
 vector<Territory *> NeutralPlayerStrategies::toAttack() {
-    return {};
+    // Neutral strategy never initiates attacks.
+    return vector<Territory*>();
 }
 
 vector<Territory *> NeutralPlayerStrategies::toDefend() {
-    return {};
+    vector<Territory*> defendList;
+
+    if (player == nullptr || player->getTerritories() == nullptr) {
+        return defendList;
+    }
+
+    for (Territory* t : *player->getTerritories()) {
+        if (t != nullptr && t->getTerritoryOwner() == player) {
+            defendList.push_back(t);
+        }
+    }
+
+    return defendList;
 }
 
 bool NeutralPlayerStrategies::issueOrder(bool inDeployPhase) {
+    (void)inDeployPhase; // Neutral strategy does not issue any orders.
     return false;
 }
 
