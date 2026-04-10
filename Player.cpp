@@ -55,24 +55,18 @@ Player::~Player() {
 
 //defend the first territory in the list 
 std::vector<Territory*>* Player::toDefend() const {
-    std::vector<Territory*>* result = new std::vector<Territory*>();
-
-    if (territories != nullptr && !territories->empty()) {
-        result->push_back((*territories)[0]);
+    if (strategy == nullptr) {
+        return new std::vector<Territory*>();
     }
-
-    return result;
+    return new std::vector<Territory*>(strategy->toDefend());
 }
 
 // attack the last territory in the list 
 std::vector<Territory*>* Player::toAttack() const {
-    std::vector<Territory*>* result = new std::vector<Territory*>();
-
-    if (territories != nullptr && !territories->empty()) {
-        result->push_back((*territories)[territories->size() - 1]);
+    if (strategy == nullptr) {
+        return new std::vector<Territory*>();
     }
-
-    return result;
+    return new std::vector<Territory*>(strategy->toAttack());
 }
 
 // Adds an order to player's orders list.
