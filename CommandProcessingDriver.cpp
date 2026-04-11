@@ -8,7 +8,6 @@ using namespace std;
 void testCommandProcessor() {
 
     GameEngine* engine = new GameEngine();
-
     CommandProcessor* cp = new CommandProcessor(engine);
 
     LogObserver* logger = new LogObserver();
@@ -25,11 +24,21 @@ void testCommandProcessor() {
         bool valid = cp->validate(c);
 
         if (valid) {
-            c->saveEffect("Command accepted");
-
             string cmd = c->getCommand();
             string firstWord = cmd.substr(0, cmd.find(" "));
-            engine->processCommand(firstWord);
+
+            if (firstWord == "tournament") {
+                cout << "Tournament parsed successfully:" << endl;
+                if (c->getTournamentData() != nullptr) {
+                    cout << *c->getTournamentData() << endl;
+                }
+                c->saveEffect("Tournament command accepted");
+                engine->processTournamentCommand(c->getTournamentData());
+            }
+            else {
+                c->saveEffect("Command accepted");
+                engine->processCommand(firstWord);
+            }
         }
 
         cout << *c << endl;
@@ -38,10 +47,12 @@ void testCommandProcessor() {
             break;
     }
 
+    delete logger;
     delete cp;
     delete engine;
 }
 
 int main() {
     testCommandProcessor();
+    return 0;
 }

@@ -5,3 +5,9 @@ Command: addplayer
 Command Effect: Player added.
 Order added to list: Deploy
 Order added to list: Advance
+Command: tournament -M world.map -P Aggressive,Benevolent -G 2 -D 20
+Command: tournament -M world.map -P Human,Aggressive -G 2 -D 20
+Command: tournament -M world.map -P Human,Aggressive -G 2 -D 20
+Command: git status
+Command: 
+Command: quit

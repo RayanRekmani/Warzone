@@ -1,7 +1,6 @@
 // developed by Lyna Taleb, 40210567
 // appended by Rayan Rekmani 40283058
 // appended by Adam Blevins 40255384
-#pragma once
 #include "GameEngine.h"
 #include "CommandProcessing.h"
 #include <random>
@@ -530,6 +529,32 @@ void GameEngine::startupPhase(){
             cout << endl;
     }
 }
+
+void GameEngine::processTournamentCommand(TournamentCommand* tc) {
+
+    if (tc == nullptr) {
+        cout << "Tournament command data is null." << endl;
+        return;
+    }
+
+    cout << "\n===== TOURNAMENT MODE ACTIVATED =====\n";
+
+    cout << "M (Maps): ";
+    for (const auto& map : tc->getMapFiles()) {
+        cout << map << " ";
+    }
+    cout << endl;
+
+    cout << "P (Players): ";
+    for (const auto& strategy : tc->getPlayerStrategies()) {
+        cout << strategy << " ";
+    }
+    cout << endl;
+
+    cout << "G (Games): " << tc->getNumberOfGames() << endl;
+    cout << "D (Max Turns): " << tc->getMaxNumberOfTurns() << endl;
+
+    cout << "====================================\n";}
 
 ostream& operator<<(ostream& os, const GameEngine& engine) {
     os << "The map that is loaded:" << endl;

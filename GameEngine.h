@@ -1,6 +1,7 @@
 // developed by Lyna Taleb, 40210567
 // appended by Rayan Rekmani 40283058
 // appended by Adam Blevins 40255384
+// appended by Alyaa Shalaby 40234333
 
 #pragma once
 #include <string>
@@ -40,6 +41,8 @@ private:
     map<string, State*>* transitions; //user commands -> next state
 };
 
+class TournamentCommand;
+
 // GAMEENGINE CLASS --------------------------------------------------------------------
 class GameEngine : public Subject, public ILoggable {
 public:
@@ -66,6 +69,7 @@ public:
     string stringToLog() const override;
 
     friend ostream& operator<<(ostream& os, const GameEngine& engine);
+    void processTournamentCommand(TournamentCommand* tc);
 
 private:
     State* currentState; //stores addy of a state obj, points to where currentState is in states vector
