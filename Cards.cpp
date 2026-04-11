@@ -1,7 +1,6 @@
 // Written by Adam Blevins, 40255384
 
 // TODO: Finalize order creation during the play() method.
-#pragma once
 #include "Cards.h"
 #include "Orders.h"
 #include <iostream>

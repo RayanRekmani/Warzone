@@ -1,5 +1,6 @@
 //
 // Created by Rayan Rekmani on 2026-02-24.
+// Appenede by Alyaa Shalaby
 //
 
 #pragma once
@@ -15,10 +16,41 @@ using namespace std;
 
 // ILoggable is an interface for objects that can be logged
 
+//
+class TournamentCommand {
+private:
+    vector<string>* mapFiles;
+    vector<string>* playerStrategies;
+    int* numberOfGames;
+    int* maxNumberOfTurns;
+
+public:
+    TournamentCommand();
+    TournamentCommand(const TournamentCommand& other);
+    TournamentCommand& operator=(const TournamentCommand& other);
+    ~TournamentCommand();
+
+    void setMapFiles(const vector<string>& maps);
+    void setPlayerStrategies(const vector<string>& strategies);
+    void setNumberOfGames(int games);
+    void setMaxNumberOfTurns(int turns);
+
+    vector<string> getMapFiles() const;
+    vector<string> getPlayerStrategies() const;
+    int getNumberOfGames() const;
+    int getMaxNumberOfTurns() const;
+
+    friend ostream& operator<<(ostream& out, const TournamentCommand& tc);
+};
+//
+
+
+
 class Command : public Subject, public ILoggable {
 private:
     string* command;
     string* effect;
+    TournamentCommand* tournamentData; //
 
 public:
     Command(string cmd);
@@ -29,6 +61,8 @@ public:
     string getCommand() const;
     string getEffect() const;
     void saveEffect(string eff);
+    void setTournamentData(TournamentCommand* td);
+    TournamentCommand* getTournamentData() const; //
     string stringToLog() const override; // many classes log (ex. CommandProcessor) so we need to override
 
     friend ostream& operator<<(ostream& out, const Command& c);
@@ -53,6 +87,15 @@ public:
     void setGameEngine(GameEngine* ge);
     string stringToLog() const override;
     friend ostream& operator<<(ostream& out, const CommandProcessor& cp);
+
+    TournamentCommand* parseTournamentCommand(const string& cmd);
+    bool validateTournamentCommand(TournamentCommand* tc);
+
+    vector<string> split(const string& str, char delimiter);
+    string trim(const string& str);
+    bool isNumber(const string& str);
+    bool hasDuplicateStrategies(const vector<string>& strategies);
+    bool isValidStrategy(const string& strategy); //
 };
 
 
@@ -83,3 +126,4 @@ public:
 };
 
 void testCommandProcessor(int argc, char* argv[]);
+
