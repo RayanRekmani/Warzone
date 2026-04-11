@@ -59,7 +59,7 @@ static void demoPlayerMethods(Player* p) {
 int main() {
     cout << "===== PlayerStrategies Driver =====\n\n";
 
-    // Shared map for Benevolent / Neutral / Cheater scenarios.
+    // shared map for benevolent / neutral / cheater scenarios
     Continent* continent = new Continent("DemoContinent", 5);
 
     Territory* bWeak = new Territory("B-Weak", 0, 0, continent);
@@ -139,7 +139,86 @@ int main() {
     cout << "  ownership after cheater turn:\n";
     printOwnership(allTerritories);
 
-    cout << "[Scenario 5] Dynamic strategy switch: Neutral -> Aggressive when attacked\n";
+    // new modification: aggressive strategy demo for person 2
+    cout << "[Scenario 5] Aggressive strategy behavior\n";
+
+    Player* aggressive = new Player("AggressiveBot");
+    Player* enemy = new Player("EnemyBot");
+
+    aggressive->setPlayerStrategies(new AggressivePlayerStrategies(aggressive));
+    enemy->setPlayerStrategies(new NeutralPlayerStrategies(enemy));
+
+    Territory* aStrong = new Territory("Aggro-Strong", 20, 0, continent);
+    Territory* aWeak = new Territory("Aggro-Weak", 21, 0, continent);
+    Territory* aEnemy = new Territory("Aggro-Target", 22, 0, continent);
+
+    connectBidirectional(aStrong, aWeak);
+    connectBidirectional(aStrong, aEnemy);
+
+    aStrong->setTerritoryOwner(aggressive);
+    aWeak->setTerritoryOwner(aggressive);
+    aEnemy->setTerritoryOwner(enemy);
+
+    aggressive->addTerritory(aStrong);
+    aggressive->addTerritory(aWeak);
+    enemy->addTerritory(aEnemy);
+
+    aStrong->setArmySize(10);
+    aWeak->setArmySize(2);
+    aEnemy->setArmySize(4);
+
+    demoPlayerMethods(aggressive);
+
+    aggressive->setReinforcementPool(6);
+    bool aggressiveDeployIssued = aggressive->issueOrder(true);
+    bool aggressiveAdvanceIssued = aggressive->issueOrder(false);
+
+    cout << "  deploy issued: " << (aggressiveDeployIssued ? "yes" : "no") << endl;
+    cout << "  advance issued: " << (aggressiveAdvanceIssued ? "yes" : "no") << endl;
+    cout << "  orders in list: " << aggressive->getOrdersList()->size() << endl;
+    cout << endl;
+
+    // new modification: human strategy demo for person 2
+    cout << "[Scenario 6] Human strategy behavior (requires user input)\n";
+
+    Player* human = new Player("HumanPlayer");
+    human->setPlayerStrategies(new HumanPlayerStrategies(human));
+
+    Territory* h1 = new Territory("Human-Home", 30, 0, continent);
+    Territory* h2 = new Territory("Human-Front", 31, 0, continent);
+    Territory* hEnemy = new Territory("Human-Enemy", 32, 0, continent);
+
+    connectBidirectional(h1, h2);
+    connectBidirectional(h2, hEnemy);
+
+    h1->setTerritoryOwner(human);
+    h2->setTerritoryOwner(human);
+    hEnemy->setTerritoryOwner(enemy);
+
+    human->addTerritory(h1);
+    human->addTerritory(h2);
+    enemy->addTerritory(hEnemy);
+
+    h1->setArmySize(7);
+    h2->setArmySize(3);
+    hEnemy->setArmySize(4);
+
+    demoPlayerMethods(human);
+
+    human->setReinforcementPool(5);
+
+    cout << "  now the human player will choose a deploy order.\n";
+    bool humanDeployIssued = human->issueOrder(true);
+    cout << "  deploy issued: " << (humanDeployIssued ? "yes" : "no") << endl;
+
+    cout << "  now the human player will decide whether to issue an advance order.\n";
+    bool humanAdvanceIssued = human->issueOrder(false);
+    cout << "  advance issued: " << (humanAdvanceIssued ? "yes" : "no") << endl;
+    cout << "  human orders in list: " << human->getOrdersList()->size() << endl;
+    cout << endl;
+
+    // new modification: keep dynamic strategy switch demo because rubric requires it
+    cout << "[Scenario 7] Dynamic strategy switch: Neutral -> Aggressive when attacked\n";
     Player* neutralSwitch = new Player("NeutralSwitch");
     Player* attacker = new Player("Attacker");
     neutralSwitch->setPlayerStrategies(new NeutralPlayerStrategies(neutralSwitch));
@@ -166,6 +245,17 @@ int main() {
     delete y;
     delete neutralSwitch;
     delete attacker;
+
+    delete aggressive;
+    delete enemy;
+    delete human;
+
+    delete aStrong;
+    delete aWeak;
+    delete aEnemy;
+    delete h1;
+    delete h2;
+    delete hEnemy;
 
     delete benevolent;
     delete neutral;

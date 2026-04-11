@@ -92,16 +92,109 @@ AggressivePlayerStrategies& AggressivePlayerStrategies::operator=(const Aggressi
 
 AggressivePlayerStrategies::~AggressivePlayerStrategies() = default;
 
+//new modification: aggressive strategy attacks enemy territories adjacent to its strongest territory
 vector<Territory *> AggressivePlayerStrategies::toAttack() {
-    return {};
+    vector<Territory*> attackList;
+
+    if (player == nullptr || player->getTerritories() == nullptr || player->getTerritories()->empty()) {
+        return attackList;
+    }
+
+    Territory* strongest = nullptr;
+    int maxArmies = -1;
+
+    for (Territory* t : *player->getTerritories()) {
+        if (t != nullptr && t->getTerritoryOwner() == player && t->getArmySize() > maxArmies) {
+            strongest = t;
+            maxArmies = t->getArmySize();
+        }
+    }
+
+    if (strongest == nullptr) {
+        return attackList;
+    }
+
+    vector<Territory*> neighbours = strongest->getNeighbours();
+    for (Territory* neighbour : neighbours) {
+        if (neighbour != nullptr && neighbour->getTerritoryOwner() != player) {
+            attackList.push_back(neighbour);
+        }
+    }
+
+    return attackList;
 }
 
+//new modification: aggressive strategy defends by prioritizing strongest territories first
 vector<Territory *> AggressivePlayerStrategies::toDefend() {
-    return {};
+    vector<Territory*> defendList;
+
+    if (player == nullptr || player->getTerritories() == nullptr) {
+        return defendList;
+    }
+
+    for (Territory* t : *player->getTerritories()) {
+        if (t != nullptr && t->getTerritoryOwner() == player) {
+            defendList.push_back(t);
+        }
+    }
+
+    sort(defendList.begin(), defendList.end(), [](Territory* a, Territory* b) {
+        if (a->getArmySize() != b->getArmySize()) {
+            return a->getArmySize() > b->getArmySize();
+        }
+        return a->getTerritoryName() < b->getTerritoryName();
+    });
+
+    return defendList;
 }
 
+//new modification: aggressive strategy deploys everything to its strongest territory and attacks from it
 bool AggressivePlayerStrategies::issueOrder(bool inDeployPhase) {
-    return true;
+    if (player == nullptr) {
+        return false;
+    }
+
+    OrdersList* orders = player->getOrdersList();
+    if (orders == nullptr) {
+        return false;
+    }
+
+    vector<Territory*> defendList = toDefend();
+    if (defendList.empty()) {
+        return false;
+    }
+
+    Territory* strongest = defendList.front();
+    if (strongest == nullptr) {
+        return false;
+    }
+
+    if (inDeployPhase) {
+        int reinforcementPool = player->getReinforcementPool();
+        if (reinforcementPool <= 0) {
+            return false;
+        }
+
+        orders->addOrder(new Deploy(player, strongest, reinforcementPool));
+        return true;
+    }
+
+    vector<Territory*> attackList = toAttack();
+    for (Territory* target : attackList) {
+        if (target == nullptr) {
+            continue;
+        }
+
+        if (strongest->isNeighbour(target) && strongest->getArmySize() > 1) {
+            int armiesToMove = strongest->getArmySize() / 2;
+            if (armiesToMove > 0) {
+                orders->addOrder(new Advance(player, strongest, target, armiesToMove));
+                return true;
+            }
+        }
+    }
+
+    return false;
 }
 
 string AggressivePlayerStrategies::getStrategyType() {
@@ -228,8 +321,6 @@ bool BenevolentPlayerStrategies::issueOrder(bool inDeployPhase) {
     return false;
 }
 
-
-
 string BenevolentPlayerStrategies::getStrategyType() {
     return "Benevolent";
 }
@@ -255,16 +346,183 @@ HumanPlayerStrategies& HumanPlayerStrategies::operator=(const HumanPlayerStrateg
 
 HumanPlayerStrategies::~HumanPlayerStrategies() = default;
 
+//new modification: human strategy returns all adjacent enemy territories
 vector<Territory*> HumanPlayerStrategies::toAttack() {
-    return {};
+    vector<Territory*> attackList;
+
+    if (player == nullptr || player->getTerritories() == nullptr) {
+        return attackList;
+    }
+
+    for (Territory* owned : *player->getTerritories()) {
+        if (owned == nullptr || owned->getTerritoryOwner() != player) {
+            continue;
+        }
+
+        vector<Territory*> neighbours = owned->getNeighbours();
+        for (Territory* neighbour : neighbours) {
+            if (neighbour != nullptr && neighbour->getTerritoryOwner() != player) {
+                if (find(attackList.begin(), attackList.end(), neighbour) == attackList.end()) {
+                    attackList.push_back(neighbour);
+                }
+            }
+        }
+    }
+
+    return attackList;
 }
 
+//new modification: human strategy returns all owned territories for the user to choose from
 vector<Territory*> HumanPlayerStrategies::toDefend() {
-    return {};
+    vector<Territory*> defendList;
+
+    if (player == nullptr || player->getTerritories() == nullptr) {
+        return defendList;
+    }
+
+    for (Territory* t : *player->getTerritories()) {
+        if (t != nullptr && t->getTerritoryOwner() == player) {
+            defendList.push_back(t);
+        }
+    }
+
+    return defendList;
 }
 
-bool HumanPlayerStrategies::issueOrder(bool inDeployPhase) {
+//new modification: helper for human strategy to let user choose a territory
+Territory* HumanPlayerStrategies::chooseTerritories(vector<Territory*> territories) {
+    if (territories.empty()) {
+        return nullptr;
+    }
+
+    cout << "Choose a territory:" << endl;
+    for (int i = 0; i < territories.size(); i++) {
+        if (territories[i] != nullptr) {
+            cout << i << ": " << territories[i]->getTerritoryName()
+                 << " (armies: " << territories[i]->getArmySize() << ")" << endl;
+        }
+    }
+
+    int choice;
+    cin >> choice;
+
+    if (choice < 0 || choice >= territories.size()) {
+        cout << "Invalid choice." << endl;
+        return nullptr;
+    }
+
+    return territories[choice];
+}
+
+//new modification: helper for human strategy to let user choose number of armies
+int HumanPlayerStrategies::chooseArmies(Territory* territory) {
+    if (territory == nullptr) {
+        return 0;
+    }
+
+    cout << "Enter number of armies for " << territory->getTerritoryName() << ": ";
+    int armies;
+    cin >> armies;
+
+    if (armies < 0) {
+        armies = 0;
+    }
+
+    return armies;
+}
+
+//new modification: helper for human strategy deploy phase
+bool HumanPlayerStrategies::issueDeployOrder() {
+    if (player == nullptr) {
+        return false;
+    }
+
+    int reinforcementPool = player->getReinforcementPool();
+    if (reinforcementPool <= 0) {
+        return false;
+    }
+
+    vector<Territory*> defendList = toDefend();
+    if (defendList.empty()) {
+        return false;
+    }
+
+    cout << "\n[Human] Deploy phase for " << player->getName() << endl;
+    Territory* target = chooseTerritories(defendList);
+    if (target == nullptr) {
+        return false;
+    }
+
+    int armies = chooseArmies(target);
+    if (armies <= 0 || armies > reinforcementPool) {
+        armies = reinforcementPool;
+    }
+
+    player->getOrdersList()->addOrder(new Deploy(player, target, armies));
     return true;
+}
+
+//new modification: helper for human strategy advance phase
+void HumanPlayerStrategies::issueAdvanceOrder() {
+    if (player == nullptr || player->getTerritories() == nullptr) {
+        return;
+    }
+
+    cout << "\n[Human] Advance phase for " << player->getName() << endl;
+    cout << "Choose source territory:" << endl;
+
+    vector<Territory*> owned = *player->getTerritories();
+    Territory* source = chooseTerritories(owned);
+    if (source == nullptr || source->getArmySize() <= 1) {
+        cout << "Invalid source territory." << endl;
+        return;
+    }
+
+    vector<Territory*> possibleTargets = source->getNeighbours();
+    if (possibleTargets.empty()) {
+        cout << "No neighbouring territories." << endl;
+        return;
+    }
+
+    cout << "Choose target territory:" << endl;
+    Territory* target = chooseTerritories(possibleTargets);
+    if (target == nullptr) {
+        return;
+    }
+
+    int maxPossible = source->getArmySize() - 1;
+    cout << "Enter number of armies to advance (max " << maxPossible << "): ";
+    int armies;
+    cin >> armies;
+
+    if (armies <= 0 || armies > maxPossible) {
+        cout << "Invalid number of armies." << endl;
+        return;
+    }
+
+    player->getOrdersList()->addOrder(new Advance(player, source, target, armies));
+}
+
+//ew modification: human strategy asks the user what to do instead of acting automatically
+bool HumanPlayerStrategies::issueOrder(bool inDeployPhase) {
+    if (player == nullptr) {
+        return false;
+    }
+
+    if (inDeployPhase) {
+        return issueDeployOrder();
+    }
+
+    cout << "\n[Human] Do you want to issue an advance order? (1 = yes, 0 = no): ";
+    int choice;
+    cin >> choice;
+
+    if (choice == 1) {
+        issueAdvanceOrder();
+        return true;
+    }
+
+    return false;
 }
 
 string HumanPlayerStrategies::getStrategyType() {
