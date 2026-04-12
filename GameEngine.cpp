@@ -634,8 +634,19 @@ void GameEngine::startupPhase(){
                             setDeck(new_deck);
                         }
                     }
+                    // Print the output of the tournament to the console
+                    string table = createTable(winners);
+                    cout << table << endl;
 
-                    cout << createTable(winners);
+                    // Logs the output of the tournament to gamelog.txt
+                    ofstream file("gamelog.txt", ios::app);
+                    if (!file.is_open()) {
+                        cerr << "ERROR: Could not open gamelog.txt" << endl;
+                        return;
+                    }
+                    file << table << endl;
+                    file.close();
+
                     exit(0);
                 }
 
@@ -673,7 +684,7 @@ string GameEngine::createTable(vector<vector<string>> winners){
         for(int j = 0; j < cell_size - 7; j++){
             table += " ";
         }
-        table += "Game " + to_string(i) + " ";
+        table += "Game " + to_string(i + 1) + " ";
     }
     table += "|\n";
 
@@ -690,7 +701,7 @@ string GameEngine::createTable(vector<vector<string>> winners){
         for(int j = 0; j < cell_size - 6; j++){
             table += " ";
         }
-        table += "Map " + to_string(i) + " |";
+        table += "Map " + to_string(i + 1) + " |";
 
         for(int j = 0; j < cols; j++){
             for(int k = 0; k < cell_size - winners[i][j].size() - 1; k++){
@@ -713,9 +724,16 @@ string GameEngine::createTable(vector<vector<string>> winners){
 }
 
 void GameEngine::processTournamentCommand(TournamentCommand* tc) {
+    // Creates an output file stream to log the details of the tournament which is closed at the end of the function.
+    ofstream file("gamelog.txt", ios::app);
+    if (!file.is_open()) {
+        cerr << "ERROR: Could not open gamelog.txt" << endl;
+        return;
+    }
 
     if (tc == nullptr) {
         cout << "Tournament command data is null." << endl;
+        file << "Tournament command data is null." << endl;
         return;
     }
 
@@ -736,7 +754,30 @@ void GameEngine::processTournamentCommand(TournamentCommand* tc) {
     cout << "G (Games): " << tc->getNumberOfGames() << endl;
     cout << "D (Max Turns): " << tc->getMaxNumberOfTurns() << endl;
 
-    cout << "====================================\n";}
+    cout << "====================================\n";
+
+    //Logs the details of the tournament to gamelog.txt
+    file << "\n===== TOURNAMENT MODE ACTIVATED =====\n";
+
+    file << "M (Maps): ";
+    for (const auto& map : tc->getMapFiles()) {
+        file << map << " ";
+    }
+    file << endl;
+
+    file << "P (Players): ";
+    for (const auto& strategy : tc->getPlayerStrategies()) {
+        file << strategy << " ";
+    }
+    file << endl;
+
+    file << "G (Games): " << tc->getNumberOfGames() << endl;
+    file << "D (Max Turns): " << tc->getMaxNumberOfTurns() << endl;
+
+    file << "====================================\n";
+
+
+    file.close();}
 
 ostream& operator<<(ostream& os, const GameEngine& engine) {
     os << "The map that is loaded:" << endl;
