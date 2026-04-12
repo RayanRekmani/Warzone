@@ -39,7 +39,6 @@ private:
     std::string* name;
     std::map<std::string, State*>* transitions;
 };
-
 class GameEngine : public Subject, public ILoggable {
 public:
     GameEngine();

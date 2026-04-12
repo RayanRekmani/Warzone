@@ -543,7 +543,11 @@ void GameEngine::startupPhase(){
                 else if(c->getCommand().substr(0, 10) == "tournament"){
                     TournamentCommand* tc = commandProcessor->parseTournamentCommand(c->getCommand());
 
-                    commandProcessor->validateTournamentCommand(tc);
+                    if (!commandProcessor->validateTournamentCommand(tc)) {
+                        delete tc;
+                        cout << "ERROR: Invalid tournament command." << endl;
+                        continue;
+                    }
                     processTournamentCommand(tc);
 
                     vector<vector<string>> winners;
@@ -556,7 +560,7 @@ void GameEngine::startupPhase(){
                             for(int i = 0; i < tc->getPlayerStrategies().size(); i++){
                                 Player* new_player = new Player(tc->getPlayerStrategies()[i] + " Player " + to_string(i));
 
-                                PlayerStrategies* new_strategy;
+                                PlayerStrategies* new_strategy = nullptr;
                                 if(tc->getPlayerStrategies()[i] == "Aggressive"){
                                     new_strategy = new AggressivePlayerStrategies();
                                 }
@@ -571,6 +575,11 @@ void GameEngine::startupPhase(){
                                 }
                                 else if(tc->getPlayerStrategies()[i] == "Cheater"){
                                     new_strategy = new CheaterPlayerStrategies();
+                                }
+
+                                if (new_strategy == nullptr) {
+                                    delete new_player;
+                                    continue;
                                 }
 
                                 new_player->setPlayerStrategies(new_strategy);
