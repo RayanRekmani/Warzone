@@ -61,12 +61,13 @@ public:
 
     State* getCurrentState() const;
 
-    void mainGameLoop(); //main loop for assignment 2
+    string mainGameLoop(int maxTurns); //main loop for assignment 2
     void reinforcementPhase(); //assign reinforcement armies to players
     void issueOrdersPhase(); //players issue orders in round robin fashion
     void executeOrdersPhase(); //execute all deploy first then remaining orders
 
     string stringToLog() const override;
+    string createTable(vector<vector<string>> winners);
 
     friend ostream& operator<<(ostream& os, const GameEngine& engine);
     void processTournamentCommand(TournamentCommand* tc);
