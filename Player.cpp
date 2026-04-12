@@ -112,6 +112,10 @@ bool Player::issueOrder(Deck* deck, const std::vector<Player*>& allPlayers) {
         return false;
     }
 
+    if (strategy != nullptr && strategy->getStrategyType() == "Cheater") {
+        return strategy->issueOrder(false);
+    }
+
     bool alreadyIssuedDeploy = false;
     bool alreadyIssuedAdvance = false;
     bool alreadyPlayedCard = false;

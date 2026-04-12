@@ -4,6 +4,7 @@
 //
 
 #include "CommandProcessing.h"
+#include "GameEngine.h"
 #include <cctype>
 
 

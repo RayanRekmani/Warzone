@@ -302,6 +302,11 @@ void GameEngine::issueOrdersPhase() {
         if (p != nullptr) {
             p->setConqueredTerritoryThisTurn(false);
             p->clearNegotiatedPlayers();
+            PlayerStrategies* strategy = p->getPlayerStrategies();
+            if (strategy != nullptr && strategy->getStrategyType() == "Cheater") {
+                // Reset cheater per-turn state before issuing starts.
+                strategy->issueOrder(true);
+            }
         }
     }
 

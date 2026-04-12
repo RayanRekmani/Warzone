@@ -9,10 +9,11 @@
 #include <vector>
 #include <iostream>
 #include <fstream>
-#include "GameEngine.h"
 #include "LoggingObserver.h"
 
 using namespace std;
+
+class GameEngine;
 
 // ILoggable is an interface for objects that can be logged
 
