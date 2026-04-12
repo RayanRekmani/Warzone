@@ -393,7 +393,7 @@ void GameEngine::executeOrdersPhase() {
     removeEliminatedPlayers();
 } //executes all deploy orders first then executes remaining orders one by one in round robin order
 
-void GameEngine::mainGameLoop(int maxTurns) {
+string GameEngine::mainGameLoop(int maxTurns) {
     cout << "\n=== Main Game Loop Started ===" << endl;
 
     int turnCount = 0;
@@ -416,8 +416,10 @@ void GameEngine::mainGameLoop(int maxTurns) {
     Player* winner = getWinner();
     if (winner != nullptr) {
         cout << "\nWinner: " << winner->getName() << endl;
+        return winner->getName();
     } else {
         cout << "\nGame ended after " << maxTurns << " turns without a winner." << endl;
+        return "Draw";
     }
 } //controls the game until one player owns all territories or all other players are eliminated
 
@@ -427,6 +429,15 @@ void GameEngine::startupPhase(){
     commandProcessor = new CommandProcessor(this);
     deck = new Deck();
     maploader = new MapLoader();
+
+    // Clear the log file
+    ofstream clearFile("gamelog.txt");
+    clearFile << "=== Game Log ===\n";
+    clearFile.close();
+
+    // One logger shared by everything
+    LogObserver* logger = new LogObserver();
+    commandProcessor->attach(logger);
 
     //while in startup phase, keep accepting commands, then process them.
     while(getCurrentState()->getName() != "assign_reinforcement"){
@@ -530,8 +541,11 @@ void GameEngine::startupPhase(){
                     commandProcessor->validateTournamentCommand(tc);
                     processTournamentCommand(tc);
 
+                    vector<vector<string>> winners;
 
                     for(int m = 0; m < tc->getMapFiles().size(); m++){
+                        vector<string> row;
+                        winners.push_back(row);
                         for(int g = 0; g < tc->getNumberOfGames(); g++){
                             // Add players and their strategies
                             for(int i = 0; i < tc->getPlayerStrategies().size(); i++){
@@ -591,7 +605,8 @@ void GameEngine::startupPhase(){
                             }
 
                             // Run game
-                            mainGameLoop(tc->getMaxNumberOfTurns());
+                            string winner = mainGameLoop(tc->getMaxNumberOfTurns());
+                            winners[m].push_back(winner);
 
                             //Clear map
                             map = nullptr;
@@ -605,6 +620,8 @@ void GameEngine::startupPhase(){
                             setDeck(new_deck);
                         }
                     }
+
+                    cout << createTable(winners);
                     exit(0);
                 }
 
@@ -615,6 +632,70 @@ void GameEngine::startupPhase(){
             }
             cout << endl;
     }
+}
+
+string GameEngine::createTable(vector<vector<string>> winners){
+    int rows = winners.size();
+    int cols = winners[0].size();
+    const int cell_size = 30;
+
+    string table = "";
+    
+    for(int i = 0; i < cols + 1; i++){
+        table += "+";
+        for(int j = 0; j < cell_size; j++){
+            table += "-";
+        }
+    }
+    table += "+\n";
+
+    table += "|";
+    for(int j = 0; j < cell_size; j++){
+        table += " ";
+    }
+
+    for(int i = 0; i < cols; i++){
+        table += "|";
+        for(int j = 0; j < cell_size - 7; j++){
+            table += " ";
+        }
+        table += "Game " + to_string(i) + " ";
+    }
+    table += "|\n";
+
+    for(int i = 0; i < cols + 1; i++){
+        table += "+";
+        for(int j = 0; j < cell_size; j++){
+            table += "-";
+        }
+    }
+    table += "+\n";
+
+    for(int i = 0; i < rows; i++){
+        table += "|";
+        for(int j = 0; j < cell_size - 6; j++){
+            table += " ";
+        }
+        table += "Map " + to_string(i) + " |";
+
+        for(int j = 0; j < cols; j++){
+            for(int k = 0; k < cell_size - winners[i][j].size() - 1; k++){
+                table += " ";
+            }
+            table += winners[i][j] + " |";
+        }
+        table += "\n";
+
+        for(int i = 0; i < cols + 1; i++){
+            table += "+";
+            for(int j = 0; j < cell_size; j++){
+                table += "-";
+            }
+        }
+        table += "+\n";
+    }
+
+    return table;
 }
 
 void GameEngine::processTournamentCommand(TournamentCommand* tc) {
