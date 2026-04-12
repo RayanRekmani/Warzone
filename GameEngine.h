@@ -1,89 +1,79 @@
 // developed by Lyna Taleb, 40210567
 // appended by Rayan Rekmani 40283058
 // appended by Adam Blevins 40255384
-// appended by Alyaa Shalaby 40234333
 
 #pragma once
+
+#include <iosfwd>
+#include <map>
 #include <string>
 #include <vector>
-#include <iostream>
-#include <map>
-#include "Cards.h"
-#include "Map.h"
-#include "Player.h"
-#include "Orders.h"
+
 #include "LoggingObserver.h"
 
-using namespace std; // for readability
-
-// class declarations (Stste + GameEngine)
-
 class CommandProcessor;
-
-// STATE CLASS --------------------------------------------------------------------
-class State {
-public:
-    State(string name);
-    State(const State& other); //copy constructor
-    State& operator=(const State& other); //assignment operator
-    ~State(); //destructor
-
-    string getName() const; //which state currently in
-
-    void addTransition(string command, State* nextState);
-    bool isCommandValid(string command) const;
-    State* getNextState(string command) const;
-
-    friend ostream& operator<<(ostream& os, const State& state); //display current state
-
-private:
-    string* name; //required by prof
-    map<string, State*>* transitions; //user commands -> next state
-};
-
+class Continent;
+class Deck;
+class Map;
+class MapLoader;
+class Player;
+class PlayerStrategies;
+class Territory;
 class TournamentCommand;
 
-// GAMEENGINE CLASS --------------------------------------------------------------------
+class State {
+public:
+    State(std::string name);
+    State(const State& other);
+    State& operator=(const State& other);
+    ~State();
+
+    std::string getName() const;
+    void addTransition(std::string command, State* nextState);
+    bool isCommandValid(std::string command) const;
+    State* getNextState(std::string command) const;
+
+    friend std::ostream& operator<<(std::ostream& os, const State& state);
+
+private:
+    std::string* name;
+    std::map<std::string, State*>* transitions;
+};
 class GameEngine : public Subject, public ILoggable {
 public:
     GameEngine();
     GameEngine(const GameEngine& other);
     GameEngine& operator=(const GameEngine& other);
-    ~GameEngine();
+    ~GameEngine() override;
 
-    void startupPhase(); // brings game to main game loop
-    void start(); //main game loopp
-    void processCommand(string command); //validates transition and executes if valid
-
-    void setPlayers(const vector<Player*>& players);
+    void initializeStates();
+    void processCommand(std::string command);
+    std::string stringToLog() const override;
+    void start();
+    void setPlayers(const std::vector<Player*>& players);
     void setDeck(Deck* deck);
     void setMap(Map* map);
-
     State* getCurrentState() const;
-
-    string mainGameLoop(int maxTurns); //main loop for assignment 2
-    void reinforcementPhase(); //assign reinforcement armies to players
-    void issueOrdersPhase(); //players issue orders in round robin fashion
-    void executeOrdersPhase(); //execute all deploy first then remaining orders
-
-    string stringToLog() const override;
-    string createTable(vector<vector<string>> winners);
-
-    friend ostream& operator<<(ostream& os, const GameEngine& engine);
+    bool ownsEntireContinent(Player* player, Continent* continent) const;
+    void removeEliminatedPlayers();
+    bool hasWinner() const;
+    Player* getWinner() const;
+    void reinforcementPhase();
+    void issueOrdersPhase();
+    void executeOrdersPhase();
+    std::string mainGameLoop(int maxTurns = 20);
+    void startupPhase();
+    std::string createTable(std::vector<std::vector<std::string>> winners);
     void processTournamentCommand(TournamentCommand* tc);
 
+    friend std::ostream& operator<<(std::ostream& os, const GameEngine& engine);
+
 private:
-    State* currentState; //stores addy of a state obj, points to where currentState is in states vector
-    vector<State*>* states;
+    std::vector<State*>* states;
+    State* currentState;
     CommandProcessor* commandProcessor;
     Deck* deck;
     MapLoader* maploader;
     Map* map;
-    vector<Player*> players;
-    void initializeStates(); //creates all states and transitions between them
-
-    bool ownsEntireContinent(Player* player, Continent* continent) const; //checks if player owns every territory in continent
-    void removeEliminatedPlayers(); //removes players with no territories left
-    bool hasWinner() const; //checks if game has winner
-    Player* getWinner() const; //returns winner if one exists
+    std::vector<Player*> players;
 };
