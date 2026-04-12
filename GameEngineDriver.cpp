@@ -60,7 +60,7 @@ int main() {
     engine.setMap(map);
     engine.setDeck(deck);
 
-    engine.mainGameLoop();
+    engine.mainGameLoop(3);
 
     delete p1;
     delete p2;
