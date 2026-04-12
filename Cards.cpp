@@ -3,11 +3,68 @@
 // TODO: Finalize order creation during the play() method.
 #include "Cards.h"
 #include "Orders.h"
+#include "Player.h"
+#include "Map.h"
 #include <iostream>
 #include <algorithm>
 #include <random>
 
 using namespace std;
+
+namespace {
+Territory* getFirstOwnedTerritory(Player* player) {
+    if (player == nullptr || player->getTerritories() == nullptr) {
+        return nullptr;
+    }
+    for (Territory* t : *player->getTerritories()) {
+        if (t != nullptr && t->getTerritoryOwner() == player) {
+            return t;
+        }
+    }
+    return nullptr;
+}
+
+Territory* getFirstOwnedTerritoryWithArmies(Player* player, int minArmies) {
+    if (player == nullptr || player->getTerritories() == nullptr) {
+        return nullptr;
+    }
+    for (Territory* t : *player->getTerritories()) {
+        if (t != nullptr && t->getTerritoryOwner() == player && t->getArmySize() >= minArmies) {
+            return t;
+        }
+    }
+    return nullptr;
+}
+
+Territory* getFirstEnemyAdjacentTerritory(Player* player) {
+    if (player == nullptr || player->getTerritories() == nullptr) {
+        return nullptr;
+    }
+
+    for (Territory* owned : *player->getTerritories()) {
+        if (owned == nullptr) {
+            continue;
+        }
+        vector<Territory*> neighbours = owned->getNeighbours();
+        for (Territory* neighbour : neighbours) {
+            if (neighbour != nullptr && neighbour->getTerritoryOwner() != nullptr
+                && neighbour->getTerritoryOwner() != player) {
+                return neighbour;
+            }
+        }
+    }
+
+    return nullptr;
+}
+
+Player* getFirstAdjacentEnemyPlayer(Player* player) {
+    Territory* enemyTerritory = getFirstEnemyAdjacentTerritory(player);
+    if (enemyTerritory == nullptr) {
+        return nullptr;
+    }
+    return enemyTerritory->getTerritoryOwner();
+}
+}
 
 /*
 *-------------------------------------------------------------------
@@ -60,10 +117,72 @@ int Hand::getSize(){
 
 // Method to play a card at an index i and removes it from the hand. 
 void Hand::playCard(int i, Deck* deck, OrdersList* ordersList){
-    // Each card has a play() method that overrides the main card classes play() method, which each creates an order corresponding to the card's type and adds it to an OrdersList.
-   ordersList->addOrder(this->hand[i]->play()); 
-   deck->addCard(this->hand[i]);
-   this->removeCard(i);
+    if (i < 0 || i >= static_cast<int>(hand.size()) || deck == nullptr || ordersList == nullptr) {
+        return;
+    }
+
+    Card* playedCard = hand[i];
+    if (playedCard == nullptr) {
+        removeCard(i);
+        return;
+    }
+
+    Order* order = playedCard->play();
+    bool isValidOrder = false;
+
+    if (order != nullptr && player != nullptr) {
+        if (Airlift* airlift = dynamic_cast<Airlift*>(order)) {
+            Territory* source = getFirstOwnedTerritoryWithArmies(player, 1);
+            Territory* target = getFirstOwnedTerritory(player);
+            if (source != nullptr && target != nullptr) {
+                int armies = std::max(1, source->getArmySize() / 2);
+                airlift->setIssuer(player);
+                airlift->setSource(source);
+                airlift->setTarget(target);
+                airlift->setNumArmies(armies);
+            }
+        } else if (Bomb* bomb = dynamic_cast<Bomb*>(order)) {
+            Territory* target = getFirstEnemyAdjacentTerritory(player);
+            if (target != nullptr) {
+                bomb->setIssuer(player);
+                bomb->setTarget(target);
+            }
+        } else if (Blockade* blockade = dynamic_cast<Blockade*>(order)) {
+            Territory* target = getFirstOwnedTerritory(player);
+            if (target != nullptr) {
+                blockade->setIssuer(player);
+                blockade->setTarget(target);
+            }
+        } else if (Negotiate* negotiate = dynamic_cast<Negotiate*>(order)) {
+            Player* targetPlayer = getFirstAdjacentEnemyPlayer(player);
+            if (targetPlayer != nullptr) {
+                negotiate->setIssuer(player);
+                negotiate->setTarget(targetPlayer);
+            }
+        } else if (dynamic_cast<Deploy*>(order) != nullptr) {
+            delete order;
+            order = nullptr;
+
+            Territory* target = getFirstOwnedTerritory(player);
+            int armies = (player->getReinforcementPool() > 0) ? 1 : 0;
+            if (target != nullptr && armies > 0) {
+                order = new Deploy(player, target, armies);
+            }
+        }
+    }
+
+    if (order != nullptr) {
+        isValidOrder = order->validate();
+    }
+
+    if (isValidOrder) {
+        ordersList->addOrder(order);
+    } else {
+        delete order;
+    }
+
+    deck->addCard(playedCard);
+    removeCard(i);
 }
 
 // Setter for the Player pointer in the hand.
