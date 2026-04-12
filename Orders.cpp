@@ -216,27 +216,33 @@ bool Advance::execute() {
     static std::mt19937 rng(std::random_device{}());
     std::uniform_real_distribution<double> dist(0.0, 1.0);
 
-    // Step 3a: Calculate defender casualties
-    int defendersKilled = 0;
-    for (int i = 0; i < attacking; ++i) {
-        if (dist(rng) <= 0.60) {
-            ++defendersKilled;
+    // Resolve battle until one side is eliminated.
+    while (attacking > 0 && defending > 0) {
+        int defendersKilled = 0;
+        for (int i = 0; i < attacking; ++i) {
+            if (dist(rng) <= 0.60) {
+                ++defendersKilled;
+            }
         }
-    }
 
-    // Step 3b: Calculate attacker casualties
-    int attackersKilled = 0;
-    for (int i = 0; i < defending; ++i) {
-        if (dist(rng) <= 0.70) {
-            ++attackersKilled;
+        int attackersKilled = 0;
+        for (int i = 0; i < defending; ++i) {
+            if (dist(rng) <= 0.70) {
+                ++attackersKilled;
+            }
         }
+
+        defendersKilled = std::min(defendersKilled, defending);
+        attackersKilled = std::min(attackersKilled, attacking);
+
+        // Avoid edge-case infinite loop if no casualties occur in a round.
+        if (defendersKilled == 0 && attackersKilled == 0) {
+            break;
+        }
+
+        attacking -= attackersKilled;
+        defending -= defendersKilled;
     }
-
-    defendersKilled = std::min(defendersKilled, defending);
-    attackersKilled = std::min(attackersKilled, attacking);
-
-    attacking -= attackersKilled;
-    defending -= defendersKilled;
 
     // Step 4: Determine outcome
     if (defending == 0) {
@@ -253,7 +259,7 @@ bool Advance::execute() {
         target->setArmySize(attacking);
         issuer->setConqueredTerritoryThisTurn(true);
 
-        effect = "Advance order executed: territory conquered.";
+        effect = "Advance order executed: attack successful, territory conquered.";
     } else {
         target->setArmySize(defending);
         effect = "Advance order executed: attack failed.";
