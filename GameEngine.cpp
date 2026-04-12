@@ -3,6 +3,7 @@
 // appended by Adam Blevins 40255384
 #include "GameEngine.h"
 #include "CommandProcessing.h"
+#include "PlayerStrategies.h"
 #include <random>
 #include "Player.h"
 #include <iostream>
@@ -11,6 +12,7 @@
 #include "Map.h"
 #include <algorithm>
 
+using namespace std;
 /*
 control flow of the game w a state machine using a pointer to a state obj
 when user enters valid command, pointer is updated to reference next state
@@ -119,6 +121,7 @@ void GameEngine::initializeStates() {
     State* end = new State("end");
 
     start->addTransition("loadmap", map_loaded);
+    start->addTransition("tournament", start);
     map_loaded->addTransition("validatemap", map_validated);
     map_validated->addTransition("addplayer", players_added);
     players_added->addTransition("addplayer", players_added);
@@ -390,11 +393,10 @@ void GameEngine::executeOrdersPhase() {
     removeEliminatedPlayers();
 } //executes all deploy orders first then executes remaining orders one by one in round robin order
 
-void GameEngine::mainGameLoop() {
+void GameEngine::mainGameLoop(int maxTurns) {
     cout << "\n=== Main Game Loop Started ===" << endl;
 
     int turnCount = 0;
-    int maxTurns = 3;
 
     while (!hasWinner() && turnCount < maxTurns) {
         turnCount++;
@@ -447,7 +449,7 @@ void GameEngine::startupPhase(){
                 arguments.push_back(""); // Some times arguments[1] will be called, this line prevents the program from crashing if there is only one argument in the command.
             }
 
-            if(commandProcessor->validate(c)){
+            if(commandProcessor->validate(c) || c->getCommand().substr(0, 10) == "tournament"){
                 // The start of a big else if chain to do an action based off the command.
                 if(arguments[0] == "loadmap"){
                     string mapName = arguments[1];
@@ -508,7 +510,6 @@ void GameEngine::startupPhase(){
                         for(int i = 0; i < players.size(); i++){
                             players[i]->setReinforcementPool(50);
                         }
-
                         
                         // Draws 2 cards to each players hand
                         for(int i = 0; i < players.size(); i++){
@@ -522,9 +523,95 @@ void GameEngine::startupPhase(){
                         cout << "ERROR: The game requires at least two players to start." << endl;
                     }
                 }
+            
+                else if(c->getCommand().substr(0, 10) == "tournament"){
+                    TournamentCommand* tc = commandProcessor->parseTournamentCommand(c->getCommand());
+
+                    commandProcessor->validateTournamentCommand(tc);
+                    processTournamentCommand(tc);
+
+
+                    for(int m = 0; m < tc->getMapFiles().size(); m++){
+                        for(int g = 0; g < tc->getNumberOfGames(); g++){
+                            // Add players and their strategies
+                            for(int i = 0; i < tc->getPlayerStrategies().size(); i++){
+                                Player* new_player = new Player(tc->getPlayerStrategies()[i] + " Player " + to_string(i));
+
+                                PlayerStrategies* new_strategy;
+                                if(tc->getPlayerStrategies()[i] == "Aggressive"){
+                                    new_strategy = new AggressivePlayerStrategies();
+                                }
+                                else if(tc->getPlayerStrategies()[i] == "Neutral"){
+                                    new_strategy = new NeutralPlayerStrategies();
+                                }
+                                else if(tc->getPlayerStrategies()[i] == "Benevolent"){
+                                    new_strategy = new BenevolentPlayerStrategies();
+                                }
+                                else if(tc->getPlayerStrategies()[i] == "Human"){
+                                    new_strategy = new HumanPlayerStrategies();
+                                }
+                                else if(tc->getPlayerStrategies()[i] == "Cheater"){
+                                    new_strategy = new CheaterPlayerStrategies();
+                                }
+
+                                new_player->setPlayerStrategies(new_strategy);
+                                new_strategy->setPlayer(new_player);
+                                players.push_back(new_player);
+                            }
+
+                            // Load map
+                            map = maploader->loadMap(tc->getMapFiles()[m]);
+                            map->validateMap();
+
+
+                        
+                            // Give away all territories fairly
+                            vector<Territory*> territories = map->getTerritories();
+                            int j = 0; // index used to loop through the player array.
+                            for(int i = 0; i < territories.size(); i++){
+                                territories[i]->setTerritoryOwner(players[j]);
+                                players[j]->addTerritory(territories[i]);
+                                j++;
+                                if(j == players.size()){ // Reset j to 0 if its larger than the number of players
+                                    j = 0;
+                                }
+                            }
+                            map->setTerritories(territories);
+
+                            // Give 50 armies to each players reinforcement pool
+                            for(int i = 0; i < players.size(); i++){
+                                players[i]->setReinforcementPool(50);
+                            }
+
+                            
+                            // Draws 2 cards to each players hand
+                            for(int i = 0; i < players.size(); i++){
+                                players[i]->getHand()->addCard(deck->draw());
+                                players[i]->getHand()->addCard(deck->draw());
+                            }
+
+                            // Run game
+                            mainGameLoop(tc->getMaxNumberOfTurns());
+
+                            //Clear map
+                            map = nullptr;
+
+                            //Clear players
+                            vector<Player*> empty;
+                            setPlayers(empty);
+
+                            //Clear deck
+                            Deck* new_deck = new Deck();
+                            setDeck(new_deck);
+                        }
+                    }
+                    exit(0);
+                }
+
             }
             else{
                 cout << "ERROR: Unrecognized command in the current state." << endl;
+                cout << c->getCommand().substr(0, 10);
             }
             cout << endl;
     }
