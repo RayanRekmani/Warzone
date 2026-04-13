@@ -552,9 +552,12 @@ void GameEngine::startupPhase(){
 
                     vector<vector<string>> winners;
 
+                    // Plays through specified maps
                     for(int m = 0; m < tc->getMapFiles().size(); m++){
+                        // For every map, add another row into winners
                         vector<string> row;
                         winners.push_back(row);
+                        // Plays g number of games on each map
                         for(int g = 0; g < tc->getNumberOfGames(); g++){
                             // Add players and their strategies
                             for(int i = 0; i < tc->getPlayerStrategies().size(); i++){
@@ -587,13 +590,18 @@ void GameEngine::startupPhase(){
                                 players.push_back(new_player);
                             }
 
-                            // Load map
+                            // Loads map
                             map = maploader->loadMap(tc->getMapFiles()[m]);
-                            map->validateMap();
+                            if(map == nullptr){
+                                cout << "ERROR: Map file was not found" << endl;
+                                exit(1);
+                            }
+                            if(!(map->validateMap())){
+                                cout << "ERROR: Map file " << tc->getMapFiles()[m] << " is invalid" << endl;
+                                exit(1);
+                            }
 
-
-                        
-                            // Give away all territories fairly
+                            // Give away all territories fairly 
                             vector<Territory*> territories = map->getTerritories();
                             int j = 0; // index used to loop through the player array.
                             for(int i = 0; i < territories.size(); i++){
@@ -610,7 +618,6 @@ void GameEngine::startupPhase(){
                             for(int i = 0; i < players.size(); i++){
                                 players[i]->setReinforcementPool(50);
                             }
-
                             
                             // Draws 2 cards to each players hand
                             for(int i = 0; i < players.size(); i++){
@@ -622,14 +629,14 @@ void GameEngine::startupPhase(){
                             string winner = mainGameLoop(tc->getMaxNumberOfTurns());
                             winners[m].push_back(winner);
 
-                            //Clear map
+                            // Clear map
                             map = nullptr;
 
-                            //Clear players
+                            // Clear players
                             vector<Player*> empty;
                             setPlayers(empty);
 
-                            //Clear deck
+                            // Clear deck
                             Deck* new_deck = new Deck();
                             setDeck(new_deck);
                         }
